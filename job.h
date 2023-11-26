@@ -1,6 +1,7 @@
+#include "arraylist.h"
 typedef struct Job {
     char* execPath;
-    char** args; //change to arraylist from the code on canvas
+    arraylist_t args;
     char* inputReDirectPath;
     char* outputReDirectPath;
 } Job;

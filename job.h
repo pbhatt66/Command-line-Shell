@@ -1,9 +1,10 @@
 #include "arraylist.h"
 typedef struct Job {
     char* execPath;
-    arraylist_t args;
+    char** args;
     char* inputReDirectPath;
     char* outputReDirectPath;
 } Job;
 
 Job *makeJob(char* jobCmd);
+void freeJob(Job* job);

@@ -8,6 +8,21 @@
  */
 int main(int argc, char const *argv[])
 {
-    /* code */
+    char* jobCmd = "foo < bar baz";
+    Job* job = makeJob(jobCmd);
+    printf("execPath: %s\n", job->execPath);
+    printf("args: %s\n", job->args[0]);
+    printf("inputReDirectPath: %s\n", job->inputReDirectPath);
+    printf("outputReDirectPath: %s\n", job->outputReDirectPath);
+
+    jobCmd = "foo bar > baz";
+    Job* newjob = makeJob(jobCmd);
+    printf("execPath: %s\n", newjob->execPath);
+    printf("args: %s\n", newjob->args[0]);
+    printf("inputReDirectPath: %s\n", newjob->inputReDirectPath);
+    printf("outputReDirectPath: %s\n", newjob->outputReDirectPath);
+
+    freeJob(job);
+    freeJob(newjob);
     return 0;
 }

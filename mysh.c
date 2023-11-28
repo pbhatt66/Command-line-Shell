@@ -47,13 +47,8 @@ int accept_cmd_line(char *cmd) {
             jobIndex++;
         }
     }
-
     int numOfJobs = jobIndex;
-    jobIndex = 0;
-    
-    
-
-
+    printf("Num of jobs to run: %d\n", numOfJobs);
     printf("Len of Job 1: %lu\n", strlen(jobList[0]));
     printf("Job 1: |%s|\n", jobList[0]);
     if(jobIndex > 1){
@@ -63,9 +58,6 @@ int accept_cmd_line(char *cmd) {
     else{
         //no pipe
     }
-
-
-    // //for(int i)
     return MYSH_EXIT_SUCCESS;
 }
 /**

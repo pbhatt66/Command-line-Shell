@@ -8,3 +8,4 @@ typedef struct Job {
 
 Job *makeJob(char* jobCmd);
 void freeJob(Job* job);
+void printJob(Job* job);

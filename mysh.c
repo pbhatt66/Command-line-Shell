@@ -27,36 +27,48 @@ int accept_cmd_line(char *cmd) {
         exit(EXIT_SUCCESS);
     }
     printf("Got a line: |%s|\n", cmd);
-    int cmdlen = strlen(cmd);
+    // int cmdlen = strlen(cmd);
 
-    int currentStartOfJob = 0, jobIndex = 0;
+    // int currentStartOfJob = 0, numOfJobs = 0;
 
-    //Job** jobList = malloc(sizeof(Job *) * 2);
-    char** jobList = malloc(sizeof(char *) * 2);
+    // Job** jobList = malloc(sizeof(Job *) * 2);
+    // jobList[0] = NULL;
+    // jobList[1] = NULL;
+    //char** jobList = malloc(sizeof(char *) * 2);
 
-    for(int i = 0; i < cmdlen + 1; i++){
-        char currentChar = cmd[i];
-        if(currentChar == '|' || currentChar == '\0'){
-            int lenOfJob = i - currentStartOfJob;
-            char* job = malloc(lenOfJob + 1);
-            memcpy(job, cmd + currentStartOfJob, lenOfJob);
-            job[lenOfJob] = '\0';
-            //jobList[jobIndex] = makeJob(job);
-            jobList[jobIndex] = job;
-            currentStartOfJob = i+1;
-            jobIndex++;
-        }
-    }
-    int numOfJobs = jobIndex;
-    printf("Num of jobs to run: %d\n", numOfJobs);
-    printf("Len of Job 1: %lu\n", strlen(jobList[0]));
-    printf("Job 1: |%s|\n", jobList[0]);
-    if(jobIndex > 1){
-        printf("Len of Job 2: %lu\n", strlen(jobList[1]));
-        printf("Job 2: |%s|\n", jobList[1]);
-    }
-    else{
-        //no pipe
+    // for(int i = 0; i < cmdlen + 1 && numOfJobs < 2; i++){
+    //     char currentChar = cmd[i];
+    //     if(currentChar == '|' || currentChar == '\0'){
+    //         int lenOfJob = i - currentStartOfJob;
+    //         char* job = malloc(lenOfJob + 1);
+    //         memcpy(job, cmd + currentStartOfJob, lenOfJob);
+    //         job[lenOfJob] = '\0';
+    //         jobList[numOfJobs] = makeJob(job);
+    //         //jobList[numOfJobs] = job;
+    //         currentStartOfJob = i+1;
+    //         numOfJobs++;
+    //     }
+    // }
+
+    /**
+     * get first data
+     * make Job
+     * run Job
+     * 
+     * if second data
+     * make Job
+     * run Job
+     * 
+     */
+    char* restOfCmd;
+    char* tok = strtok_r(cmd, "|", &restOfCmd);
+    while(tok != NULL){
+        if(tok[0] == ' ') tok += 1;//rmv white space from start
+        if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
+        Job* job = makeJob(tok);
+        printJob(job);
+        freeJob(job);
+        tok = strtok_r(NULL, "|", &restOfCmd);
     }
     return MYSH_EXIT_SUCCESS;
 }

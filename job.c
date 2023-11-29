@@ -1,9 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "job.h"
 
+#define NUMOFPATHS 3
+// char* path1 = "/usr/local/bin";
+// char* path2 = "/usr/bin";
+// char* path3 = "/bin";
 
+char * paths[] = {
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+};
+char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
+    size_t lenOfpath1PlusBareName = strlen(pathToCheck) + 1 + lenOfBareName; //len w/o terminator
+    char* path1PlusBareName = malloc(lenOfpath1PlusBareName + 1);
+    snprintf(path1PlusBareName, lenOfpath1PlusBareName + 1, "%s/%s", pathToCheck, bareName);
+    if(access(path1PlusBareName, F_OK) == 0){
+        return path1PlusBareName;
+    }
+    else{
+        free(path1PlusBareName);
+        return NULL;
+    }
+}
 
 /**
  * @brief This takes in the string job cmd, and returns a Job Struct pointer
@@ -45,7 +67,7 @@ Job *makeJob(char* jobCmd){
     //also make sepereate .c files to deal with cd, pwd, which, bc these 3 cmds, we are
     //suppose to implement.
     Job* job = malloc(sizeof(Job));
-    job->execPath = malloc(sizeof(char) * 256);
+    //job->execPath = malloc(sizeof(char) * 256);
     job->args = malloc(sizeof(char *) * 256);
     for(int i = 0; i < 256; i++){
         job->args[i] = malloc(sizeof(char) * 256);
@@ -54,7 +76,7 @@ Job *makeJob(char* jobCmd){
     job->outputReDirectPath = malloc(sizeof(char) * 256);
 
     // initialize all fields to null originally
-    job->execPath[0] = '\0';
+    //job->execPath[0] = '\0';
     for(int i = 0; i < 256; i++){
         job->args[i][0] = '\0';
     }
@@ -62,14 +84,34 @@ Job *makeJob(char* jobCmd){
     job->outputReDirectPath[0] = '\0';
 
     int jobCmdLen = strlen(jobCmd);
+   
+
+    char* endOfBareName = strchr(jobCmd, ' '); //get a ptr to first ' ' in jobCmd
+    if(endOfBareName == NULL) endOfBareName = jobCmd + strlen(jobCmd);
+    size_t lenOfBareName = endOfBareName - jobCmd; //len w/o terminator
+    char* bareName = malloc((lenOfBareName + 1) * sizeof(char)); //malloc lenOfBareName + terminator
+    strncpy(bareName, jobCmd, lenOfBareName); //cpy barename
+    bareName[lenOfBareName] = '\0';           //append terminator
+    printf("Parsing: |%s|\n", bareName);
+    if(strchr(bareName, '/')){
+        job->execPath = bareName;
+    }
+    else{
+        for(int i = 0; i < NUMOFPATHS; i++){
+            job->execPath = my_acess(paths[i], bareName, lenOfBareName);
+            if(job->execPath != NULL) break;
+        }
+        free(bareName);
+    }
     
-    //first, find the execPath
+
+    // advance i
     int i = 0;
     while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
-        job->execPath[i] = jobCmd[i];
-        i++;
+          //job->execPath[i] = jobCmd[i];
+          i++;
     }
-    job->execPath[i] = '\0';
+    //job->execPath[i] = '\0';
     //now, find the args
     int argsIndex = 0;
     while (jobCmd[i] != '\0'){

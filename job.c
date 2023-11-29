@@ -131,5 +131,17 @@ void freeJob(Job* job){
     free(job->outputReDirectPath);
     free(job);
 }
-
-
+void printJob(Job* job){
+    printf("Job: \n");
+    printf("\tExec: %s\n", job->execPath);
+    printf("\tArgs: ");
+    int i = 0;
+    while (strcmp(job->args[i], ""))
+    {
+        printf("|%s|", job->args[i]);
+        i++;
+    }
+    printf("\n");
+    printf("\tInRe: %s\n", job->inputReDirectPath);
+    printf("\tOuRe: %s\n", job->outputReDirectPath);
+}

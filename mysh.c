@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/errno.h>
+#include <ctype.h>
 #include "job.h"
 #ifndef DEBUG
     #define DEBUG 1
@@ -11,7 +12,11 @@
 #define BUFSIZE 256
 #define MYSH_EXIT_SUCCESS 1
 #define MYSH_EXIT_FAILURE 0
+#define MYSH_EXIT_UNDEF 2
+
 #define COND_END_INDEX 4
+
+int mysh_errno = MYSH_EXIT_SUCCESS;
 
 // int runJob(Job* job, int pipeId){
 //     // run 1 job
@@ -61,7 +66,20 @@
 //     //     exit(1); //error
 //     // }
 // }
-
+/**
+ * @brief 
+ * 
+ * @param s 
+ * @return int 1 if fully white space, 0 if not
+ */
+int strisempty(char *s) {
+  while (*s != '\0') {
+    if (!isspace((unsigned char)*s))
+      return 0;
+    s++;
+  }
+  return 1;
+}
 int runJob(Job* job){
     if(strcmp(job->inputReDirectPath, "") != 0){
         //input redircetion
@@ -143,7 +161,7 @@ int runJobs(Job** jobs, int numOfJobs){
         if(child_status2 != 0)
             return MYSH_EXIT_FAILURE;
         else
-            return EXIT_SUCCESS;
+            return MYSH_EXIT_SUCCESS;
     }
 }
 
@@ -157,7 +175,10 @@ int runJobs(Job** jobs, int numOfJobs){
  * @return int MYSH_EXIT_SUCCESS | MYSH_EXIT_FAILURE
  */
 int accept_cmd_line(char *cmd) {
-    if (strcmp("exit", cmd) == 0) {
+    //printf("CMD: |%s|---------------------------------\n", cmd);
+    if(strisempty(cmd)) return MYSH_EXIT_UNDEF;
+    if(strcmp(cmd, ""))
+    if(strstr(cmd, "exit") != NULL){
         printf("mysh: exiting\n");
         exit(EXIT_SUCCESS);
     }
@@ -195,13 +216,29 @@ int accept_cmd_line(char *cmd) {
      * run Job
      * 
      */
+    if(cmd[strlen(cmd)-1] == '|'){
+        fprintf(stderr, "mysh: could not parse command\n");
+        return MYSH_EXIT_FAILURE;
+    }
     char* restOfCmd;
     char* tok = strtok_r(cmd, "|", &restOfCmd);
     Job** jobsMade= malloc(sizeof(Job*) * 2);
     int numOfJobs = 0;
-    while(tok != NULL){
-        if(tok[0] == ' ') tok += 1;//rmv white space from start
-        if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
+    while(tok != NULL && numOfJobs < 2){
+        // if(tok[0] == ' ') tok += 1;//rmv white space from start
+        // if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
+        //printf("BTOK: |%s|\n", tok);
+        while(isspace(tok[0])) tok += 1; //rmv white space from start
+        //rmv white space from end
+        //printf("outside: |%c|\n", tok[strlen(tok)-1]);
+        int i = strlen(tok) - 1;
+        while(isspace(tok[i])) {
+            //printf("here: |%c|\n", tok[i]);
+            i--;
+        }
+        tok[i+1] = '\0';
+
+        //printf("ATOK: |%s|\n", tok);
         //Job* j = makeJob(tok);
         jobsMade[numOfJobs] = makeJob(tok);
         if(jobsMade[numOfJobs] == NULL){
@@ -217,6 +254,7 @@ int accept_cmd_line(char *cmd) {
         //     printf("Job Succed\n");
         // }
         tok = strtok_r(NULL, "|", &restOfCmd);
+        //printf("NTOK: |%s|\n", tok);
         numOfJobs++;
     }
 
@@ -228,6 +266,7 @@ int accept_cmd_line(char *cmd) {
         printf("Job Succed\n");
         return MYSH_EXIT_SUCCESS;
     }
+    printf("Job Failed\n");
     return MYSH_EXIT_FAILURE;
 }
 /**
@@ -237,6 +276,33 @@ int accept_cmd_line(char *cmd) {
 void promptNextCMD(){
     printf("mysh> ");
     fflush(stdout);
+}
+void accept_line(char* line){
+    if(strncmp(line, "then", COND_END_INDEX) == 0){
+        printf("Checking then\n");
+        if(mysh_errno == MYSH_EXIT_SUCCESS || mysh_errno == MYSH_EXIT_UNDEF){
+            mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
+        }
+        else {
+            //used "then", but prev cmd retured a error
+            //so the new cmd is not run
+        }
+            
+    }
+    else if(strncmp(line, "else", COND_END_INDEX) == 0){
+        printf("Checking else\n");
+        if(mysh_errno == MYSH_EXIT_FAILURE || mysh_errno == MYSH_EXIT_UNDEF){
+            mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
+        }
+        else {
+            //used "else", but prev cmd did not return an error
+            //so the new cmd is not run
+        }      
+    }
+    else{
+        //no conditionals needs to be checked
+        mysh_errno = accept_cmd_line(line);
+    }
 }
 /**
  * @brief This main method reads from STDIN_FILENO or bash file line by line
@@ -251,7 +317,7 @@ int main(int argc, char **argv) {
     char buf[BUFSIZE];
     int pos, bytes, line_length = 0, fd, start;
     char *line = NULL;
-    int SHOWPROMPTS = 0, mysh_errno = MYSH_EXIT_SUCCESS;
+    int SHOWPROMPTS = 0;
     printf("Num of args: %d\n", argc);
     if (argc > 1) {
         fd = open(argv[1], O_RDONLY);
@@ -276,31 +342,7 @@ int main(int argc, char **argv) {
                 memcpy(line + line_length, buf + start, len);
                 line_length = line_length + len;
                 line[line_length] = '\0';
-                if(strncmp(line, "then", COND_END_INDEX) == 0){
-                    printf("Checking then\n");
-                    if(mysh_errno == MYSH_EXIT_SUCCESS){
-                        mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
-                    }
-                    else {
-                        //used "then", but prev cmd retured a error
-                        //so the new cmd is not run
-                    }
-                        
-                }
-                else if(strncmp(line, "else", COND_END_INDEX) == 0){
-                    printf("Checking else\n");
-                    if(mysh_errno == MYSH_EXIT_FAILURE){
-                        mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
-                    }
-                    else {
-                        //used "else", but prev cmd did not return an error
-                        //so the new cmd is not run
-                    }      
-                }
-                else{
-                    //no conditionals needs to be checked
-                    mysh_errno = accept_cmd_line(line);
-                }
+                accept_line(line);
                 free(line);
                 line = NULL;
                 line_length = 0;
@@ -318,6 +360,7 @@ int main(int argc, char **argv) {
             line[line_length] = '\0';
             if (DEBUG)
                 printf("Partial line |%s|; %d bytes\n", line, line_length);
+            accept_line(line);
         }
         if (SHOWPROMPTS) promptNextCMD();
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "job.h"
 #include "arraylist.h"
 
@@ -10,11 +11,14 @@
 // char* path2 = "/usr/bin";
 // char* path3 = "/bin";
 
+
+
 char * paths[] = {
     "/usr/local/bin",
     "/usr/bin",
     "/bin",
 };
+
 char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
     size_t lenOfpath1PlusBareName = strlen(pathToCheck) + 1 + lenOfBareName; //len w/o terminator
     char* path1PlusBareName = malloc(lenOfpath1PlusBareName + 1);
@@ -86,8 +90,8 @@ Job *makeJob(char* jobCmd){
 
     //int jobCmdLen = strlen(jobCmd);
    
-
-    char* endOfBareName = strchr(jobCmd, ' '); //get a ptr to first ' ' in jobCmd
+    if(strlen(jobCmd) == 0) return NULL;
+    char* endOfBareName = strpbrk(jobCmd, " \t\r"); //get a ptr to first ' ' or '\r' or '\t' in jobCmd
     if(endOfBareName == NULL) endOfBareName = jobCmd + strlen(jobCmd);
     size_t lenOfBareName = endOfBareName - jobCmd; //len w/o terminator
     char* bareName = malloc((lenOfBareName + 1) * sizeof(char)); //malloc lenOfBareName + terminator
@@ -110,13 +114,13 @@ Job *makeJob(char* jobCmd){
     int i = 0;
     // int argsIndex = 0;
     while (jobCmd[i] != '\0'){
-        if(jobCmd[i] == ' '){
+        if(isspace(jobCmd[i])){
             i++;
             continue;
         }
         else if(jobCmd[i] == '<'){
             i++;
-            while(jobCmd[i] == ' ' || jobCmd[i] == '<' || jobCmd[i] == '>'){
+            while(isspace(jobCmd[i]) || jobCmd[i] == '<' || jobCmd[i] == '>'){
                 if(jobCmd[i] == '>') return NULL;
                 i++;
             }
@@ -124,7 +128,7 @@ Job *makeJob(char* jobCmd){
             if(jobCmd[i] == '\0'){
                 return NULL;
             }
-            while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
+            while(!isspace(jobCmd[i]) && jobCmd[i] != '\0'){
                 job->inputReDirectPath[j] = jobCmd[i];
                 i++;
                 j++;
@@ -134,7 +138,7 @@ Job *makeJob(char* jobCmd){
         }
         else if(jobCmd[i] == '>'){
             i++;
-            while(jobCmd[i] == ' ' || jobCmd[i] == '>' || jobCmd[i] == '<'){
+            while(isspace(jobCmd[i]) || jobCmd[i] == '>' || jobCmd[i] == '<'){
                 if(jobCmd[i] == '<') return NULL;
                 i++;
             }
@@ -142,7 +146,7 @@ Job *makeJob(char* jobCmd){
                 return NULL;
             }
             int j = 0;
-            while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
+            while(!isspace(jobCmd[i]) && jobCmd[i] != '\0'){
                 job->outputReDirectPath[j] = jobCmd[i];
                 i++;
                 j++;
@@ -152,7 +156,7 @@ Job *makeJob(char* jobCmd){
         else{
             char* currArg = malloc(sizeof(char)*256);
             int j = 0;
-            while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
+            while(!isspace(jobCmd[i]) && jobCmd[i] != '\0'){
                 currArg[j] = jobCmd[i];
                 i++;
                 j++;

@@ -9,4 +9,4 @@ job.o: job.h
 mysh.o: mysh.c
 
 clean:
-	rm -f -r *.o *.dSYM words
+	rm -f -r *.o *.dSYM mysh

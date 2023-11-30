@@ -121,14 +121,15 @@ Job *makeJob(char* jobCmd){
                 i++;
             }
             int j = 0;
+            if(jobCmd[i] == '\0'){
+                return NULL;
+            }
             while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
                 job->inputReDirectPath[j] = jobCmd[i];
                 i++;
                 j++;
             }
-            if(jobCmd[i] == '\0'){
-                return NULL;
-            }
+
             job->inputReDirectPath[j] = '\0';
         }
         else if(jobCmd[i] == '>'){

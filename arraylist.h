@@ -1,3 +1,5 @@
+#ifndef ARRLIST
+#define ARRLIST
 typedef char* elem_t;
 
 typedef struct {
@@ -14,3 +16,6 @@ void al_destroy(arraylist_t *);
 unsigned al_length(arraylist_t *);
 int al_push(arraylist_t *, elem_t);
 int al_pop(arraylist_t *, elem_t *);
+#endif
+
+

@@ -5,19 +5,7 @@
 #include <ctype.h>
 #include "job.h"
 #include "arraylist.h"
-
-#define NUMOFPATHS 3
-// char* path1 = "/usr/local/bin";
-// char* path2 = "/usr/bin";
-// char* path3 = "/bin";
-
-
-
-char * paths[] = {
-    "/usr/local/bin",
-    "/usr/bin",
-    "/bin",
-};
+#include "builtins.h"
 
 char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
     size_t lenOfpath1PlusBareName = strlen(pathToCheck) + 1 + lenOfBareName; //len w/o terminator
@@ -99,6 +87,9 @@ Job *makeJob(char* jobCmd){
     bareName[lenOfBareName] = '\0';           //append terminator
     //printf("Parsing: |%s|\n", bareName);
     if(strchr(bareName, '/')){
+        job->execPath = bareName;
+    } 
+    else if(isBuiltIn(bareName)){
         job->execPath = bareName;
     }
     else{

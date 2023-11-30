@@ -6,6 +6,11 @@
         "string.h": "c",
         "_null.h": "c",
         "errno.h": "c",
-        "arraylist.h": "c"
+        "arraylist.h": "c",
+        "builtins.h": "c",
+        "_malloc.h": "c",
+        "_xlocale.h": "c",
+        "mysh_lib.h": "c",
+        "job.h": "c"
     }
 }

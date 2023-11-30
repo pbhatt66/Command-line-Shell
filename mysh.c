@@ -5,16 +5,12 @@
 #include <unistd.h>
 #include <sys/errno.h>
 #include <ctype.h>
-#include "job.h"
-#ifndef DEBUG
-    #define DEBUG 1
-#endif
-#define BUFSIZE 256
-#define MYSH_EXIT_SUCCESS 1
-#define MYSH_EXIT_FAILURE 0
-#define MYSH_EXIT_UNDEF 2
 
-#define COND_END_INDEX 4
+#include "builtins.h"
+#include "job.h"
+#include "mysh_lib.h"
+#define BUFSIZE 256
+
 
 int mysh_errno = MYSH_EXIT_SUCCESS;
 
@@ -60,9 +56,6 @@ int runJob(Job* job){
     fprintf(stderr, "mysh: command not found: %s\n", job->args[0]);
     exit(EXIT_FAILURE);
 }
-int isBuiltInJob(Job* job){
-    return strcmp(job->execPath, "cd") == 0 || strcmp(job->execPath, "pwd") == 0 || strcmp(job->execPath, "which") == 0;
-}
 int runBuiltInJob(Job* job){
     //duplicated stdin/stdout
     int exit_status = MYSH_EXIT_FAILURE;
@@ -90,11 +83,11 @@ int runBuiltInJob(Job* job){
         }
     }
     if(strcmp(job->execPath, "cd") == 0){
-        
+        exit_status = cd(job);
     } else if (strcmp(job->execPath, "pwd") == 0){
-        
+        exit_status = pwd(job);
     } else if (strcmp(job->execPath, "which") == 0){
-        
+        exit_status = which(job);
     } 
     //reset in/out to terminal
     dup2(dupedInfd, STDIN_FILENO);
@@ -104,8 +97,8 @@ int runBuiltInJob(Job* job){
 }
 int runJobs(Job** jobs, int numOfJobs){
     if(numOfJobs == 1){
-        if(isBuiltInJob(job[0])){
-            return runBuiltInJob(job[0]);
+        if(isBuiltIn(jobs[0]->execPath)){
+            return runBuiltInJob(jobs[0]);
         }
         if (fork() == 0) {
             runJob(jobs[0]);
@@ -120,18 +113,20 @@ int runJobs(Job** jobs, int numOfJobs){
     else{
         int fd[2];
         pipe(fd);
+
         if (fork() == 0) { //first child
-            dup2(fd[1], STDOUT_FILENO);
+            dup2(fd[1], STDOUT_FILENO); //pipe setup
             runJob(jobs[0]);
         }
         int child_status;
         wait(&child_status);
         if(child_status != 0)
             return MYSH_EXIT_FAILURE;
+        
         close(fd[1]);
 
         if (fork() == 0) { //second child
-            dup2(fd[0], STDIN_FILENO);
+            dup2(fd[0], STDIN_FILENO); //pipe setup
             runJob(jobs[1]);
         }
         int child_status2;

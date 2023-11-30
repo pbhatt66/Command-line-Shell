@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/errno.h>
 #include "job.h"
 #ifndef DEBUG
     #define DEBUG 1
@@ -11,6 +12,140 @@
 #define MYSH_EXIT_SUCCESS 1
 #define MYSH_EXIT_FAILURE 0
 #define COND_END_INDEX 4
+
+// int runJob(Job* job, int pipeId){
+//     // run 1 job
+//     if (fork() == 0) {
+//         if(strcmp(job->inputReDirectPath, "") != 0){
+//             //input redircetion
+//             int fd = open(job->inputReDirectPath, O_RDONLY);
+//             if(fd != -1){
+//                 dup2(fd, STDIN_FILENO);
+//             } else{
+//                 perror(job->args[0]);
+//             }
+//         }
+//         if(strcmp(job->outputReDirectPath, "") != 0){
+//             //output redircetion
+//             int fd = open(job->outputReDirectPath, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+//             if(fd != -1){
+//                 dup2(fd, STDOUT_FILENO);
+//             } else{
+//                 perror(job->args[0]);
+//             }
+//         }
+//         execv(job->execPath, job->args);
+//         perror("ERROR\n");
+//     }
+//     int child_status;
+//     wait(&child_status);
+//     if(child_status == 0)
+//         return MYSH_EXIT_SUCCESS;
+//     else   
+//         return MYSH_EXIT_FAILURE;
+
+//     // // opening two processes and establishing a pipe
+//     // int fd[2];
+//     // pipe(fd);
+//     // if (fork() == 0) {
+//     //     // first child
+//     //     dup2(fd[1], STDOUT_FILENO);
+//     //     execl(first_program, ..., NULL);
+//     //     exit(1); //error
+//     // }
+//     // close(fd[1]);
+//     // if (fork() == 0) {
+//     //     // second child
+//     //     dup2(fd[0], STDIN_FILENO);
+//     //     execl(second_program, ..., NULL);
+//     //     exit(1); //error
+//     // }
+// }
+
+int runJob(Job* job){
+    if(strcmp(job->inputReDirectPath, "") != 0){
+        //input redircetion
+        int fd = open(job->inputReDirectPath, O_RDONLY);
+        if(fd != -1){
+            dup2(fd, STDIN_FILENO);
+        } else{
+            fprintf(stderr, "mysh: %s: %s\n", strerror(errno),job->inputReDirectPath);
+            exit(EXIT_FAILURE);
+            return MYSH_EXIT_FAILURE;
+        }
+    }
+    if(strcmp(job->outputReDirectPath, "") != 0){
+        //output redircetion
+        int fd = open(job->outputReDirectPath, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP);
+        if(fd != -1){
+            dup2(fd, STDOUT_FILENO);
+        } else{
+            fprintf(stderr, "mysh: %s: %s\n", strerror(errno),job->outputReDirectPath);
+            exit(EXIT_FAILURE);
+            return MYSH_EXIT_FAILURE;
+        }
+    }
+    execv(job->execPath, job->args);
+    fprintf(stderr, "mysh: command not found: %s\n", job->args[0]);
+    exit(EXIT_FAILURE);
+
+    // // opening two processes and establishing a pipe
+    // int fd[2];
+    // pipe(fd);
+    // if (fork() == 0) {
+    //     // first child
+    //     dup2(fd[1], STDOUT_FILENO);
+    //     execl(first_program, ..., NULL);
+    //     exit(1); //error
+    // }
+    // close(fd[1]);
+    // if (fork() == 0) {
+    //     // second child
+    //     dup2(fd[0], STDIN_FILENO);
+    //     execl(second_program, ..., NULL);
+    //     exit(1); //error
+    // }
+}
+
+int runJobs(Job** jobs, int numOfJobs){
+    if(numOfJobs == 1){
+        if (fork() == 0) {
+            runJob(jobs[0]);
+        }
+        int child_status;
+        wait(&child_status);
+        if(child_status == 0)
+            return MYSH_EXIT_SUCCESS;
+        else   
+            return MYSH_EXIT_FAILURE;
+    }
+    else{
+        //pipes
+        int fd[2];
+        pipe(fd);
+        if (fork() == 0) {
+            //first child
+            dup2(fd[1], STDOUT_FILENO);
+            runJob(jobs[0]);
+        }
+        int child_status;
+        wait(&child_status);
+        if(child_status != 0)
+            return MYSH_EXIT_FAILURE;
+        close(fd[1]);
+        if (fork() == 0) {
+            //second child
+            dup2(fd[0], STDIN_FILENO);
+            runJob(jobs[1]);
+        }
+        int child_status2;
+        wait(&child_status2);
+        if(child_status2 != 0)
+            return MYSH_EXIT_FAILURE;
+        else
+            return EXIT_SUCCESS;
+    }
+}
 
 /**
  * @brief This is the main utilty function. It takes in a cmd line
@@ -26,7 +161,7 @@ int accept_cmd_line(char *cmd) {
         printf("mysh: exiting\n");
         exit(EXIT_SUCCESS);
     }
-    printf("Got a line: |%s|\n", cmd);
+    //printf("Got a line: |%s|\n", cmd);
     // int cmdlen = strlen(cmd);
 
     // int currentStartOfJob = 0, numOfJobs = 0;
@@ -62,15 +197,38 @@ int accept_cmd_line(char *cmd) {
      */
     char* restOfCmd;
     char* tok = strtok_r(cmd, "|", &restOfCmd);
+    Job** jobsMade= malloc(sizeof(Job*) * 2);
+    int numOfJobs = 0;
     while(tok != NULL){
         if(tok[0] == ' ') tok += 1;//rmv white space from start
         if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
-        Job* job = makeJob(tok);
-        printJob(job);
-        freeJob(job);
+        //Job* j = makeJob(tok);
+        jobsMade[numOfJobs] = makeJob(tok);
+        if(jobsMade[numOfJobs] == NULL){
+            fprintf(stderr, "mysh: could not parse command\n");
+            return MYSH_EXIT_FAILURE;
+        }
+        printJob(jobsMade[numOfJobs]);
+        //int returnStatus = runJob(job);
+        // if(returnStatus == MYSH_EXIT_FAILURE){
+        //     printf("Job Failed\n");
+        // }
+        // if(returnStatus == MYSH_EXIT_SUCCESS){
+        //     printf("Job Succed\n");
+        // }
         tok = strtok_r(NULL, "|", &restOfCmd);
+        numOfJobs++;
     }
-    return MYSH_EXIT_SUCCESS;
+
+    int returnStatus = runJobs(jobsMade, numOfJobs);
+    for(int i = 0; i < numOfJobs; i++){
+        freeJob(jobsMade[i]);
+    }
+    if(returnStatus == MYSH_EXIT_SUCCESS){
+        printf("Job Succed\n");
+        return MYSH_EXIT_SUCCESS;
+    }
+    return MYSH_EXIT_FAILURE;
 }
 /**
  * @brief Prints "mysh> ", and force flushes stdout, so the printf call 
@@ -94,7 +252,7 @@ int main(int argc, char **argv) {
     int pos, bytes, line_length = 0, fd, start;
     char *line = NULL;
     int SHOWPROMPTS = 0, mysh_errno = MYSH_EXIT_SUCCESS;
-
+    printf("Num of args: %d\n", argc);
     if (argc > 1) {
         fd = open(argv[1], O_RDONLY);
         SHOWPROMPTS = 0;

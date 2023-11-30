@@ -17,6 +17,7 @@ int al_init(arraylist_t *L, unsigned capacity)
     if (L->data == NULL) return 0;
 
     L->length = 0;
+    L->startingPoint = 0;
     L->size = capacity;
 
     return 1;
@@ -69,7 +70,7 @@ int al_push(arraylist_t *L, elem_t elem)
     return 1;
 }
 
-// remove item from end of list
+// remove item from start of list
 // write item to dest (if dest is non-NULL)
 // return 1 on success, 0 on failure (i.e., list is empty)
 
@@ -78,8 +79,8 @@ int al_pop(arraylist_t *L, elem_t *dest)
     if (L->length == 0) return 0;
 
     L->length--;
-    if (dest) *dest = L->data[L->length];
-    if (DEBUG) printf("Removed %d; new length %d\n", L->data[L->length], L->length);
-
+    if (dest) *dest = L->data[L->startingPoint];
+    if (DEBUG) printf("Removed %s; new length %d\n", L->data[L->startingPoint], L->length);
+    L->startingPoint++;
     return 1;
 }

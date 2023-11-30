@@ -1,7 +1,7 @@
-#include "arraylist.h"
 typedef struct Job {
     char* execPath;
     char** args;
+    int numOfArgs;
     char* inputReDirectPath;
     char* outputReDirectPath;
 } Job;

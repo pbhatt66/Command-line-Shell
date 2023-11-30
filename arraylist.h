@@ -1,9 +1,10 @@
-typedef int elem_t;
+typedef char* elem_t;
 
 typedef struct {
     elem_t *data;
     unsigned length;  // number of elements in list
     unsigned size;    // number of elements in array
+    unsigned startingPoint;
 } arraylist_t;
 
 int al_init(arraylist_t *, unsigned);

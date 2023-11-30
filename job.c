@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "job.h"
+#include "arraylist.h"
 
 #define NUMOFPATHS 3
 // char* path1 = "/usr/local/bin";
@@ -60,7 +61,7 @@ char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
  * 
  * There will be no pipes, or conditinals in the input string
  * @param jobCmds 
- * @return Job* 
+ * @return Job* | NULL if parsing error
  */
 Job *makeJob(char* jobCmd){
     //deals with wildcards, input/output redirection, and execPath finder(bare names)
@@ -68,22 +69,22 @@ Job *makeJob(char* jobCmd){
     //suppose to implement.
     Job* job = malloc(sizeof(Job));
     //job->execPath = malloc(sizeof(char) * 256);
-    job->args = malloc(sizeof(char *) * 256);
-    for(int i = 0; i < 256; i++){
-        job->args[i] = malloc(sizeof(char) * 256);
-    }
+    //job->args = malloc(sizeof(char *) * 256);
+    // for(int i = 0; i < 256; i++){
+    //     job->args[i] = malloc(sizeof(char) * 256);
+    // }
     job->inputReDirectPath = malloc(sizeof(char) * 256);
     job->outputReDirectPath = malloc(sizeof(char) * 256);
 
     // initialize all fields to null originally
     //job->execPath[0] = '\0';
-    for(int i = 0; i < 256; i++){
-        job->args[i][0] = '\0';
-    }
+    // for(int i = 0; i < 256; i++){
+    //     job->args[i][0] = '\0';
+    // }
     job->inputReDirectPath[0] = '\0';
     job->outputReDirectPath[0] = '\0';
 
-    int jobCmdLen = strlen(jobCmd);
+    //int jobCmdLen = strlen(jobCmd);
    
 
     char* endOfBareName = strchr(jobCmd, ' '); //get a ptr to first ' ' in jobCmd
@@ -92,7 +93,7 @@ Job *makeJob(char* jobCmd){
     char* bareName = malloc((lenOfBareName + 1) * sizeof(char)); //malloc lenOfBareName + terminator
     strncpy(bareName, jobCmd, lenOfBareName); //cpy barename
     bareName[lenOfBareName] = '\0';           //append terminator
-    printf("Parsing: |%s|\n", bareName);
+    //printf("Parsing: |%s|\n", bareName);
     if(strchr(bareName, '/')){
         job->execPath = bareName;
     }
@@ -103,17 +104,11 @@ Job *makeJob(char* jobCmd){
         }
         free(bareName);
     }
-    
 
-    // advance i
+    //make argList
+    arraylist_t* argList = al_create(1);
     int i = 0;
-    while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
-          //job->execPath[i] = jobCmd[i];
-          i++;
-    }
-    //job->execPath[i] = '\0';
-    //now, find the args
-    int argsIndex = 0;
+    // int argsIndex = 0;
     while (jobCmd[i] != '\0'){
         if(jobCmd[i] == ' '){
             i++;
@@ -121,7 +116,8 @@ Job *makeJob(char* jobCmd){
         }
         else if(jobCmd[i] == '<'){
             i++;
-            while(jobCmd[i] == ' '){
+            while(jobCmd[i] == ' ' || jobCmd[i] == '<' || jobCmd[i] == '>'){
+                if(jobCmd[i] == '>') return NULL;
                 i++;
             }
             int j = 0;
@@ -130,12 +126,19 @@ Job *makeJob(char* jobCmd){
                 i++;
                 j++;
             }
+            if(jobCmd[i] == '\0'){
+                return NULL;
+            }
             job->inputReDirectPath[j] = '\0';
         }
         else if(jobCmd[i] == '>'){
             i++;
-            while(jobCmd[i] == ' '){
+            while(jobCmd[i] == ' ' || jobCmd[i] == '>' || jobCmd[i] == '<'){
+                if(jobCmd[i] == '<') return NULL;
                 i++;
+            }
+            if(jobCmd[i] == '\0'){
+                return NULL;
             }
             int j = 0;
             while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
@@ -146,26 +149,37 @@ Job *makeJob(char* jobCmd){
             job->outputReDirectPath[j] = '\0';
         }
         else{
+            char* currArg = malloc(sizeof(char)*256);
             int j = 0;
             while(jobCmd[i] != ' ' && jobCmd[i] != '\0'){
-                job->args[argsIndex][j] = jobCmd[i];
+                currArg[j] = jobCmd[i];
                 i++;
                 j++;
             }
-            job->args[argsIndex][j] = '\0';
-            argsIndex++;
+            currArg[j] = '\0';
+            //printf("|%s|\n", currArg);
+            al_push(argList, currArg);
+            // argsIndex++;
         }
             
     }
-
+    job->numOfArgs = al_length(argList);
+    job->args = malloc(sizeof(char*) * (job->numOfArgs + 1)); //+1 bc execv needs NULL terminated array
+    for(int i = 0; i < job->numOfArgs; i++){
+        char* arg;
+        al_pop(argList, &arg);
+        job->args[i] = malloc((sizeof(char) * strlen(arg)) + 1);
+        strcpy(job->args[i], arg);
+    }
+    job->args[job->numOfArgs] = NULL;
+    al_destroy(argList);
     return job;
-
 }
 
 // free the job struct
 void freeJob(Job* job){
     free(job->execPath);
-    for(int i = 0; i < 256; i++){
+    for(int i = 0; i < job->numOfArgs; i++){
         free(job->args[i]);
     }
     free(job->args);
@@ -177,12 +191,14 @@ void printJob(Job* job){
     printf("Job: \n");
     printf("\tExec: %s\n", job->execPath);
     printf("\tArgs: ");
-    int i = 0;
-    while (strcmp(job->args[i], ""))
-    {
+    for(int i = 0; i < job->numOfArgs+1; i++){
         printf("|%s|", job->args[i]);
-        i++;
     }
+    // while (strcmp(job->args[i], ""))
+    // {
+    //     printf("|%s|", job->args[i]);
+    //     i++;
+    // }
     printf("\n");
     printf("\tInRe: %s\n", job->inputReDirectPath);
     printf("\tOuRe: %s\n", job->outputReDirectPath);

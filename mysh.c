@@ -18,54 +18,6 @@
 
 int mysh_errno = MYSH_EXIT_SUCCESS;
 
-// int runJob(Job* job, int pipeId){
-//     // run 1 job
-//     if (fork() == 0) {
-//         if(strcmp(job->inputReDirectPath, "") != 0){
-//             //input redircetion
-//             int fd = open(job->inputReDirectPath, O_RDONLY);
-//             if(fd != -1){
-//                 dup2(fd, STDIN_FILENO);
-//             } else{
-//                 perror(job->args[0]);
-//             }
-//         }
-//         if(strcmp(job->outputReDirectPath, "") != 0){
-//             //output redircetion
-//             int fd = open(job->outputReDirectPath, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
-//             if(fd != -1){
-//                 dup2(fd, STDOUT_FILENO);
-//             } else{
-//                 perror(job->args[0]);
-//             }
-//         }
-//         execv(job->execPath, job->args);
-//         perror("ERROR\n");
-//     }
-//     int child_status;
-//     wait(&child_status);
-//     if(child_status == 0)
-//         return MYSH_EXIT_SUCCESS;
-//     else   
-//         return MYSH_EXIT_FAILURE;
-
-//     // // opening two processes and establishing a pipe
-//     // int fd[2];
-//     // pipe(fd);
-//     // if (fork() == 0) {
-//     //     // first child
-//     //     dup2(fd[1], STDOUT_FILENO);
-//     //     execl(first_program, ..., NULL);
-//     //     exit(1); //error
-//     // }
-//     // close(fd[1]);
-//     // if (fork() == 0) {
-//     //     // second child
-//     //     dup2(fd[0], STDIN_FILENO);
-//     //     execl(second_program, ..., NULL);
-//     //     exit(1); //error
-//     // }
-// }
 /**
  * @brief 
  * 
@@ -80,6 +32,7 @@ int strisempty(char *s) {
   }
   return 1;
 }
+
 int runJob(Job* job){
     if(strcmp(job->inputReDirectPath, "") != 0){
         //input redircetion
@@ -106,27 +59,54 @@ int runJob(Job* job){
     execv(job->execPath, job->args);
     fprintf(stderr, "mysh: command not found: %s\n", job->args[0]);
     exit(EXIT_FAILURE);
-
-    // // opening two processes and establishing a pipe
-    // int fd[2];
-    // pipe(fd);
-    // if (fork() == 0) {
-    //     // first child
-    //     dup2(fd[1], STDOUT_FILENO);
-    //     execl(first_program, ..., NULL);
-    //     exit(1); //error
-    // }
-    // close(fd[1]);
-    // if (fork() == 0) {
-    //     // second child
-    //     dup2(fd[0], STDIN_FILENO);
-    //     execl(second_program, ..., NULL);
-    //     exit(1); //error
-    // }
 }
+int isBuiltInJob(Job* job){
+    return strcmp(job->execPath, "cd") == 0 || strcmp(job->execPath, "pwd") == 0 || strcmp(job->execPath, "which") == 0;
+}
+int runBuiltInJob(Job* job){
+    //duplicated stdin/stdout
+    int exit_status = MYSH_EXIT_FAILURE;
+    int dupedInfd = dup(STDIN_FILENO);
+    int dupedOutfd = dup(STDOUT_FILENO);
 
+    //setup redierection
+    if(strcmp(job->inputReDirectPath, "") != 0){
+        //input redircetion
+        int fd = open(job->inputReDirectPath, O_RDONLY);
+        if(fd != -1){
+            dup2(fd, STDIN_FILENO);
+        } else{
+            fprintf(stderr, "mysh: %s: %s\n", strerror(errno), job->inputReDirectPath);
+            exit_status = MYSH_EXIT_FAILURE;
+        }
+    }
+    if(strcmp(job->outputReDirectPath, "") != 0){
+        int fd = open(job->outputReDirectPath, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP);
+        if(fd != -1){
+            dup2(fd, STDOUT_FILENO);
+        } else{
+            fprintf(stderr, "mysh: %s: %s\n", strerror(errno), job->outputReDirectPath);
+            exit_status = MYSH_EXIT_FAILURE;
+        }
+    }
+    if(strcmp(job->execPath, "cd") == 0){
+        
+    } else if (strcmp(job->execPath, "pwd") == 0){
+        
+    } else if (strcmp(job->execPath, "which") == 0){
+        
+    } 
+    //reset in/out to terminal
+    dup2(dupedInfd, STDIN_FILENO);
+    dup2(dupedOutfd, STDOUT_FILENO);
+    return exit_status;
+
+}
 int runJobs(Job** jobs, int numOfJobs){
     if(numOfJobs == 1){
+        if(isBuiltInJob(job[0])){
+            return runBuiltInJob(job[0]);
+        }
         if (fork() == 0) {
             runJob(jobs[0]);
         }
@@ -138,11 +118,9 @@ int runJobs(Job** jobs, int numOfJobs){
             return MYSH_EXIT_FAILURE;
     }
     else{
-        //pipes
         int fd[2];
         pipe(fd);
-        if (fork() == 0) {
-            //first child
+        if (fork() == 0) { //first child
             dup2(fd[1], STDOUT_FILENO);
             runJob(jobs[0]);
         }
@@ -151,8 +129,8 @@ int runJobs(Job** jobs, int numOfJobs){
         if(child_status != 0)
             return MYSH_EXIT_FAILURE;
         close(fd[1]);
-        if (fork() == 0) {
-            //second child
+
+        if (fork() == 0) { //second child
             dup2(fd[0], STDIN_FILENO);
             runJob(jobs[1]);
         }
@@ -182,40 +160,6 @@ int accept_cmd_line(char *cmd) {
         printf("mysh: exiting\n");
         exit(EXIT_SUCCESS);
     }
-    //printf("Got a line: |%s|\n", cmd);
-    // int cmdlen = strlen(cmd);
-
-    // int currentStartOfJob = 0, numOfJobs = 0;
-
-    // Job** jobList = malloc(sizeof(Job *) * 2);
-    // jobList[0] = NULL;
-    // jobList[1] = NULL;
-    //char** jobList = malloc(sizeof(char *) * 2);
-
-    // for(int i = 0; i < cmdlen + 1 && numOfJobs < 2; i++){
-    //     char currentChar = cmd[i];
-    //     if(currentChar == '|' || currentChar == '\0'){
-    //         int lenOfJob = i - currentStartOfJob;
-    //         char* job = malloc(lenOfJob + 1);
-    //         memcpy(job, cmd + currentStartOfJob, lenOfJob);
-    //         job[lenOfJob] = '\0';
-    //         jobList[numOfJobs] = makeJob(job);
-    //         //jobList[numOfJobs] = job;
-    //         currentStartOfJob = i+1;
-    //         numOfJobs++;
-    //     }
-    // }
-
-    /**
-     * get first data
-     * make Job
-     * run Job
-     * 
-     * if second data
-     * make Job
-     * run Job
-     * 
-     */
     if(cmd[strlen(cmd)-1] == '|'){
         fprintf(stderr, "mysh: could not parse command\n");
         return MYSH_EXIT_FAILURE;

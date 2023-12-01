@@ -227,10 +227,10 @@ int accept_cmd_line(char *cmd) {
     if(strcmp(cmd, ""))
     cmd = removeLeadingTrailingSpace(cmd);
     printf("Full Command Entered: |%s|\n", cmd);
-    if(strcmp(cmd, "exit") == 0){
-        printf("mysh: exiting\n");
-        exit(EXIT_SUCCESS);
-    }
+    // if(strcmp(cmd, "exit") == 0){
+    //     printf("mysh: exiting\n");
+    //     exit(EXIT_SUCCESS);
+    // }
     if(cmd[strlen(cmd)-1] == '|'){
         fprintf(stderr, "mysh: could not parse command\n");
         return MYSH_EXIT_FAILURE;
@@ -241,7 +241,10 @@ int accept_cmd_line(char *cmd) {
     int numOfJobs = 0;
     while(tok != NULL && numOfJobs < 2){
         tok = removeLeadingTrailingSpace(tok);
-
+        if(strncmp(tok, "exit", COND_END_INDEX) == 0){
+            printf("mysh: exiting\n");
+            exit(EXIT_SUCCESS);
+        }
         //printf("ATOK: |%s|\n", tok);
         //Job* j = makeJob(tok);
         jobsMade[numOfJobs] = makeJob(tok);
@@ -250,6 +253,7 @@ int accept_cmd_line(char *cmd) {
             return MYSH_EXIT_FAILURE;
         }
         printJob(jobsMade[numOfJobs]);
+        if(jobsMade[numOfJobs]->execPath)
         //int returnStatus = runJob(job);
         // if(returnStatus == MYSH_EXIT_FAILURE){
         //     printf("Job Failed\n");

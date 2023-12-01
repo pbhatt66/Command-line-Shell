@@ -11,6 +11,7 @@
         "_malloc.h": "c",
         "_xlocale.h": "c",
         "mysh_lib.h": "c",
-        "job.h": "c"
+        "job.h": "c",
+        "ctype.h": "c"
     }
 }

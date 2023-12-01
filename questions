@@ -1,3 +1,10 @@
-- can we use fflush
-- everything is working, accept pipes with builtins
+- working:
+    - non-pipe cmds
+    - non-pipe builtins
+    - piped cmds: 
+        cmd|cmd
+- NOT WOKRING
+    - piped builtin: 
+        cmd|builtin
+        builtin|cmd
 - for batch mode, can we only run sh files

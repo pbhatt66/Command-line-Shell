@@ -148,44 +148,50 @@ int runJobs(Job** jobs, int numOfJobs){
     else{
         int fd[2];
         pipe(fd);
+        int childstatus1 = MYSH_EXIT_UNDEF;
+        int childstatus2 = MYSH_EXIT_UNDEF;
         if(isBuiltIn(jobs[0]->execPath)){
             dup2(fd[1], STDOUT_FILENO); //pipe setup
-            int child_status = runBuiltInJob(jobs[0]);
-            if(child_status == MYSH_EXIT_FAILURE)
-                return MYSH_EXIT_FAILURE;
+            childstatus1 = runBuiltInJob(jobs[0]);
+            // if(child_status == MYSH_EXIT_FAILURE)
+            //     return MYSH_EXIT_FAILURE;
         } else {
             if (fork() == 0) { //first child
                 dup2(fd[1], STDOUT_FILENO); //pipe setup
                 runJob(jobs[0]);
             }
-            int child_status;
-            wait(&child_status);
-            if(child_status != 0)
-                return MYSH_EXIT_FAILURE;
+            // int child_status;
+            wait(&childstatus1);
+            // if(child_status != 0)
+            //     return MYSH_EXIT_FAILURE;
         }
         close(fd[1]);
         if(isBuiltIn(jobs[1]->execPath)){
             dup2(fd[0], STDIN_FILENO); //pipe setup
-            int child_status = runBuiltInJob(jobs[1]);
-            if(child_status == MYSH_EXIT_FAILURE)
-                return MYSH_EXIT_FAILURE;
-            else
-                return MYSH_EXIT_SUCCESS;
+            childstatus2 = runBuiltInJob(jobs[1]);
+            // if(child_status == MYSH_EXIT_FAILURE)
+            //     return MYSH_EXIT_FAILURE;
+            // else
+            //     return MYSH_EXIT_SUCCESS;
         } else {
             if (fork() == 0) { //second child
                 dup2(fd[0], STDIN_FILENO); //pipe setup
                 runJob(jobs[1]);
             }
-            int child_status2;
-            wait(&child_status2);
+            // int child_status2;
+            wait(&childstatus2);
 
-            if(child_status2 != 0)
-                return MYSH_EXIT_FAILURE;
-            else
-                return MYSH_EXIT_SUCCESS;
+            // if(child_status2 != 0)
+            //     return MYSH_EXIT_FAILURE;
+            // else
+            //     return MYSH_EXIT_SUCCESS;
         }
-
-
+        printf("RETURN: %d\n", childstatus2);
+        if(childstatus2 != 0)
+            return MYSH_EXIT_FAILURE;
+        else
+            return MYSH_EXIT_SUCCESS;
+        
 
         // works for a non-builtin piped to a non-builtin 
         // if (fork() == 0) { //first child

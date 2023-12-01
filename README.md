@@ -24,6 +24,11 @@ Overview:
 - Batch Mode:
 
 Important Notes:
+- condinations:
+    - in pipe, exit status depends on the status of the last cmd in pipe
+        false | true -> sucess
+        true | false -> failure
+    - if single cmd, exit status depends on status of cmd
 - exiting:
     - exit with or without any args, with or without pipes
         will exit mysh

@@ -8,4 +8,4 @@
         cmd|builtin
         builtin|cmd
 - for batch mode, can we only run sh files
-- do $$=current pid, $!-err work?
+- do $$=current pid, or $HOME

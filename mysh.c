@@ -10,7 +10,7 @@
 #include "job.h"
 #include "mysh_lib.h"
 #define BUFSIZE 256
-
+#define SLEEPLEN 5
 
 int mysh_errno = MYSH_EXIT_SUCCESS;
 
@@ -27,6 +27,38 @@ int strisempty(char *s) {
     s++;
   }
   return 1;
+}
+
+void printfds(char* s){
+    fprintf(stderr, "%s\n", s);
+    fprintf(stderr, "||||||| STDIN  FD: |%d||||||||\n", fileno(stdin));
+    fprintf(stderr, "||||||| STDOUT FD: |%d||||||||\n", fileno(stdout));
+}
+void my_sleep(int time, int num){
+    //return;
+    fprintf(stderr, "|||||||||||||||STR SLEEP %d\n", num);
+    sleep(time);
+    fprintf(stderr, "|||||||||||||||END SLEEP %d\n", num);
+}
+char* removeLeadingTrailingSpace(char *s){
+    // if(tok[0] == ' ') tok += 1;//rmv white space from start
+    // if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
+    //printf("BTOK: |%s|\n", tok);
+    while(isspace(s[0])) {
+        //printf("Space at start\n");
+        s += 1;
+    } //rmv white space from start
+    //rmv white space from end
+    //printf("outside: |%c|\n", tok[strlen(tok)-1]);
+    
+    int i = strlen(s) - 1;
+    while(isspace(s[i])) {
+        //printf("here: |%c|\n", tok[i]);
+        i--;
+    }
+    s[i+1] = '\0';
+
+    return s;
 }
 
 int runJob(Job* job){
@@ -57,11 +89,11 @@ int runJob(Job* job){
     exit(EXIT_FAILURE);
 }
 int runBuiltInJob(Job* job){
-    //duplicated stdin/stdout
     int exit_status = MYSH_EXIT_FAILURE;
-    int dupedInfd = dup(STDIN_FILENO);
-    int dupedOutfd = dup(STDOUT_FILENO);
-
+    // int dupedInfd = dup(STDIN_FILENO);
+    // int dupedOutfd = dup(STDOUT_FILENO);
+    int dupedInfd = dup(fileno(stdin));
+    int dupedOutfd = dup(fileno(stdout));
     //setup redierection
     if(strcmp(job->inputReDirectPath, "") != 0){
         //input redircetion
@@ -89,9 +121,12 @@ int runBuiltInJob(Job* job){
     } else if (strcmp(job->execPath, "which") == 0){
         exit_status = which(job);
     } 
-    //reset in/out to terminal
-    dup2(dupedInfd, STDIN_FILENO);
-    dup2(dupedOutfd, STDOUT_FILENO);
+    if(strcmp(job->inputReDirectPath, "") != 0){
+        dup2(dupedInfd, STDIN_FILENO);
+    } 
+    if(strcmp(job->outputReDirectPath, "") != 0){
+        dup2(dupedOutfd, STDOUT_FILENO);
+    } 
     return exit_status;
 
 }
@@ -113,28 +148,67 @@ int runJobs(Job** jobs, int numOfJobs){
     else{
         int fd[2];
         pipe(fd);
-
-        if (fork() == 0) { //first child
+        if(isBuiltIn(jobs[0]->execPath)){
             dup2(fd[1], STDOUT_FILENO); //pipe setup
-            runJob(jobs[0]);
+            int child_status = runBuiltInJob(jobs[0]);
+            if(child_status == MYSH_EXIT_FAILURE)
+                return MYSH_EXIT_FAILURE;
+        } else {
+            if (fork() == 0) { //first child
+                dup2(fd[1], STDOUT_FILENO); //pipe setup
+                runJob(jobs[0]);
+            }
+            int child_status;
+            wait(&child_status);
+            if(child_status != 0)
+                return MYSH_EXIT_FAILURE;
         }
-        int child_status;
-        wait(&child_status);
-        if(child_status != 0)
-            return MYSH_EXIT_FAILURE;
-        
         close(fd[1]);
-
-        if (fork() == 0) { //second child
+        if(isBuiltIn(jobs[1]->execPath)){
             dup2(fd[0], STDIN_FILENO); //pipe setup
-            runJob(jobs[1]);
+            int child_status = runBuiltInJob(jobs[1]);
+            if(child_status == MYSH_EXIT_FAILURE)
+                return MYSH_EXIT_FAILURE;
+            else
+                return MYSH_EXIT_SUCCESS;
+        } else {
+            if (fork() == 0) { //second child
+                dup2(fd[0], STDIN_FILENO); //pipe setup
+                runJob(jobs[1]);
+            }
+            int child_status2;
+            wait(&child_status2);
+
+            if(child_status2 != 0)
+                return MYSH_EXIT_FAILURE;
+            else
+                return MYSH_EXIT_SUCCESS;
         }
-        int child_status2;
-        wait(&child_status2);
-        if(child_status2 != 0)
-            return MYSH_EXIT_FAILURE;
-        else
-            return MYSH_EXIT_SUCCESS;
+
+
+
+        // works for a non-builtin piped to a non-builtin 
+        // if (fork() == 0) { //first child
+        //     dup2(fd[1], STDOUT_FILENO); //pipe setup
+        //     runJob(jobs[0]);
+        // }
+        // int child_status;
+        // wait(&child_status);
+        // if(child_status != 0)
+        //     return MYSH_EXIT_FAILURE;
+        
+        // close(fd[1]);
+
+        // if (fork() == 0) { //second child
+        //     dup2(fd[0], STDIN_FILENO); //pipe setup
+        //     runJob(jobs[1]);
+        // }
+        // int child_status2;
+        // wait(&child_status2);
+        // if(child_status2 != 0)
+        //     return MYSH_EXIT_FAILURE;
+        // else
+        //     return MYSH_EXIT_SUCCESS;
     }
 }
 
@@ -151,7 +225,9 @@ int accept_cmd_line(char *cmd) {
     //printf("CMD: |%s|---------------------------------\n", cmd);
     if(strisempty(cmd)) return MYSH_EXIT_UNDEF;
     if(strcmp(cmd, ""))
-    if(strstr(cmd, "exit") != NULL){
+    cmd = removeLeadingTrailingSpace(cmd);
+    printf("Full Command Entered: |%s|\n", cmd);
+    if(strcmp(cmd, "exit") == 0){
         printf("mysh: exiting\n");
         exit(EXIT_SUCCESS);
     }
@@ -164,18 +240,7 @@ int accept_cmd_line(char *cmd) {
     Job** jobsMade= malloc(sizeof(Job*) * 2);
     int numOfJobs = 0;
     while(tok != NULL && numOfJobs < 2){
-        // if(tok[0] == ' ') tok += 1;//rmv white space from start
-        // if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
-        //printf("BTOK: |%s|\n", tok);
-        while(isspace(tok[0])) tok += 1; //rmv white space from start
-        //rmv white space from end
-        //printf("outside: |%c|\n", tok[strlen(tok)-1]);
-        int i = strlen(tok) - 1;
-        while(isspace(tok[i])) {
-            //printf("here: |%c|\n", tok[i]);
-            i--;
-        }
-        tok[i+1] = '\0';
+        tok = removeLeadingTrailingSpace(tok);
 
         //printf("ATOK: |%s|\n", tok);
         //Job* j = makeJob(tok);

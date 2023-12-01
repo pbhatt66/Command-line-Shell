@@ -1,0 +1,3 @@
+- can we use fflush
+- everything is working, accept pipes with builtins
+- for batch mode, can we only run sh files

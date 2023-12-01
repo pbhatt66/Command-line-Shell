@@ -10,6 +10,7 @@ char * paths[] = {
     "/bin",
 };
 int isBuiltIn(char* cmdName){
+    if(cmdName == NULL) return 0;
     return strcmp(cmdName, "cd") == 0 || strcmp(cmdName, "pwd") == 0 || strcmp(cmdName, "which") == 0;
 }
 // which is used to find the path to a command.

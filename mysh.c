@@ -28,36 +28,17 @@ int strisempty(char *s) {
   }
   return 1;
 }
-
-void printfds(char* s){
-    fprintf(stderr, "%s\n", s);
-    fprintf(stderr, "||||||| STDIN  FD: |%d||||||||\n", fileno(stdin));
-    fprintf(stderr, "||||||| STDOUT FD: |%d||||||||\n", fileno(stdout));
-}
-void my_sleep(int time, int num){
-    //return;
-    fprintf(stderr, "|||||||||||||||STR SLEEP %d\n", num);
-    sleep(time);
-    fprintf(stderr, "|||||||||||||||END SLEEP %d\n", num);
-}
 char* removeLeadingTrailingSpace(char *s){
-    // if(tok[0] == ' ') tok += 1;//rmv white space from start
-    // if(tok[strlen(tok)] == ' ') tok[strlen(tok)] = '\0'; ////rmv white space from end
-    //printf("BTOK: |%s|\n", tok);
+    //rmv white space from start
     while(isspace(s[0])) {
-        //printf("Space at start\n");
         s += 1;
-    } //rmv white space from start
+    } 
     //rmv white space from end
-    //printf("outside: |%c|\n", tok[strlen(tok)-1]);
-    
     int i = strlen(s) - 1;
     while(isspace(s[i])) {
-        //printf("here: |%c|\n", tok[i]);
         i--;
     }
     s[i+1] = '\0';
-
     return s;
 }
 
@@ -127,6 +108,8 @@ int runBuiltInJob(Job* job){
     if(strcmp(job->outputReDirectPath, "") != 0){
         dup2(dupedOutfd, STDOUT_FILENO);
     } 
+    close(dupedInfd);
+    close(dupedOutfd);
     return exit_status;
 
 }
@@ -140,10 +123,7 @@ int runJobs(Job** jobs, int numOfJobs){
         }
         int child_status;
         wait(&child_status);
-        if(child_status == 0)
-            return MYSH_EXIT_SUCCESS;
-        else   
-            return MYSH_EXIT_FAILURE;
+        return child_status;
     }
     else{
         int fd[2];
@@ -151,70 +131,36 @@ int runJobs(Job** jobs, int numOfJobs){
         int childstatus1 = MYSH_EXIT_UNDEF;
         int childstatus2 = MYSH_EXIT_UNDEF;
         if(isBuiltIn(jobs[0]->execPath)){
+            int stdoutbackup = dup(STDOUT_FILENO);
             dup2(fd[1], STDOUT_FILENO); //pipe setup
             childstatus1 = runBuiltInJob(jobs[0]);
-            // if(child_status == MYSH_EXIT_FAILURE)
-            //     return MYSH_EXIT_FAILURE;
+            dup2(stdoutbackup, STDOUT_FILENO); //reset
+            close(stdoutbackup);
         } else {
             if (fork() == 0) { //first child
                 dup2(fd[1], STDOUT_FILENO); //pipe setup
                 runJob(jobs[0]);
             }
-            // int child_status;
             wait(&childstatus1);
-            // if(child_status != 0)
-            //     return MYSH_EXIT_FAILURE;
         }
+        
         close(fd[1]);
+        
         if(isBuiltIn(jobs[1]->execPath)){
+            int stdinbackup = dup(STDIN_FILENO);
             dup2(fd[0], STDIN_FILENO); //pipe setup
             childstatus2 = runBuiltInJob(jobs[1]);
-            // if(child_status == MYSH_EXIT_FAILURE)
-            //     return MYSH_EXIT_FAILURE;
-            // else
-            //     return MYSH_EXIT_SUCCESS;
+            dup2(stdinbackup, STDIN_FILENO); //reset
+            close(stdinbackup);
         } else {
             if (fork() == 0) { //second child
                 dup2(fd[0], STDIN_FILENO); //pipe setup
                 runJob(jobs[1]);
             }
-            // int child_status2;
             wait(&childstatus2);
-
-            // if(child_status2 != 0)
-            //     return MYSH_EXIT_FAILURE;
-            // else
-            //     return MYSH_EXIT_SUCCESS;
         }
-        printf("RETURN: %d\n", childstatus2);
-        if(childstatus2 != 0)
-            return MYSH_EXIT_FAILURE;
-        else
-            return MYSH_EXIT_SUCCESS;
-        
-
-        // works for a non-builtin piped to a non-builtin 
-        // if (fork() == 0) { //first child
-        //     dup2(fd[1], STDOUT_FILENO); //pipe setup
-        //     runJob(jobs[0]);
-        // }
-        // int child_status;
-        // wait(&child_status);
-        // if(child_status != 0)
-        //     return MYSH_EXIT_FAILURE;
-        
-        // close(fd[1]);
-
-        // if (fork() == 0) { //second child
-        //     dup2(fd[0], STDIN_FILENO); //pipe setup
-        //     runJob(jobs[1]);
-        // }
-        // int child_status2;
-        // wait(&child_status2);
-        // if(child_status2 != 0)
-        //     return MYSH_EXIT_FAILURE;
-        // else
-        //     return MYSH_EXIT_SUCCESS;
+        close(fd[0]);
+        return childstatus2;
     }
 }
 
@@ -228,15 +174,9 @@ int runJobs(Job** jobs, int numOfJobs){
  * @return int MYSH_EXIT_SUCCESS | MYSH_EXIT_FAILURE
  */
 int accept_cmd_line(char *cmd) {
-    //printf("CMD: |%s|---------------------------------\n", cmd);
     if(strisempty(cmd)) return MYSH_EXIT_UNDEF;
     if(strcmp(cmd, ""))
     cmd = removeLeadingTrailingSpace(cmd);
-    printf("Full Command Entered: |%s|\n", cmd);
-    // if(strcmp(cmd, "exit") == 0){
-    //     printf("mysh: exiting\n");
-    //     exit(EXIT_SUCCESS);
-    // }
     if(cmd[strlen(cmd)-1] == '|'){
         fprintf(stderr, "mysh: could not parse command\n");
         return MYSH_EXIT_FAILURE;
@@ -251,24 +191,13 @@ int accept_cmd_line(char *cmd) {
             printf("mysh: exiting\n");
             exit(EXIT_SUCCESS);
         }
-        //printf("ATOK: |%s|\n", tok);
-        //Job* j = makeJob(tok);
         jobsMade[numOfJobs] = makeJob(tok);
         if(jobsMade[numOfJobs] == NULL){
             fprintf(stderr, "mysh: could not parse command\n");
             return MYSH_EXIT_FAILURE;
         }
-        printJob(jobsMade[numOfJobs]);
-        if(jobsMade[numOfJobs]->execPath)
-        //int returnStatus = runJob(job);
-        // if(returnStatus == MYSH_EXIT_FAILURE){
-        //     printf("Job Failed\n");
-        // }
-        // if(returnStatus == MYSH_EXIT_SUCCESS){
-        //     printf("Job Succed\n");
-        // }
+        //printJob(jobsMade[numOfJobs]);
         tok = strtok_r(NULL, "|", &restOfCmd);
-        //printf("NTOK: |%s|\n", tok);
         numOfJobs++;
     }
 
@@ -277,10 +206,10 @@ int accept_cmd_line(char *cmd) {
         freeJob(jobsMade[i]);
     }
     if(returnStatus == MYSH_EXIT_SUCCESS){
-        printf("Job Succed\n");
+        //printf("Job Succed\n");
         return MYSH_EXIT_SUCCESS;
     }
-    printf("Job Failed\n");
+    //printf("Job Failed\n");
     return MYSH_EXIT_FAILURE;
 }
 /**
@@ -288,12 +217,13 @@ int accept_cmd_line(char *cmd) {
  * is printed since there is no "\n" character
  */
 void promptNextCMD(){
-    printf("mysh> ");
-    fflush(stdout);
+    write(STDOUT_FILENO, "mysh> ", 7);
+    // printf("mysh> ");
+    // fflush(stdout);
 }
 void accept_line(char* line){
     if(strncmp(line, "then", COND_END_INDEX) == 0){
-        printf("Checking then\n");
+        // printf("Checking then\n");
         if(mysh_errno == MYSH_EXIT_SUCCESS || mysh_errno == MYSH_EXIT_UNDEF){
             mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
         }
@@ -304,7 +234,7 @@ void accept_line(char* line){
             
     }
     else if(strncmp(line, "else", COND_END_INDEX) == 0){
-        printf("Checking else\n");
+        // printf("Checking else\n");
         if(mysh_errno == MYSH_EXIT_FAILURE || mysh_errno == MYSH_EXIT_UNDEF){
             mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
         }
@@ -332,7 +262,6 @@ int main(int argc, char **argv) {
     int pos, bytes, line_length = 0, fd, start;
     char *line = NULL;
     int SHOWPROMPTS = 0;
-    printf("Num of args: %d\n", argc);
     if (argc > 1) {
         fd = open(argv[1], O_RDONLY);
         SHOWPROMPTS = 0;

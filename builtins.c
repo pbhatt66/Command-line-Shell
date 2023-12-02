@@ -116,6 +116,7 @@ int pwd(Job* job){
     if(fulldir != NULL){
         printf("%s\n", fulldir);
         free(fulldir);
+        printf("PWD: here\n");
         return MYSH_EXIT_SUCCESS;
     } else{
         return MYSH_EXIT_FAILURE;

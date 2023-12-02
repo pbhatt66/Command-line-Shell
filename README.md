@@ -24,7 +24,11 @@ Overview:
 - Batch Mode:
 
 Important Notes:
-- condinations:
+- escaped space: 
+    mysh does not deal with spaces in file names or dir. 
+    in a normal terminal they are dealt with by escaping the space:('\ ')
+    but mysh does not bc it is not reuqired
+- conditinals:
     - in pipe, exit status depends on the status of the last cmd in pipe
         false | true -> sucess
         true | false -> failure

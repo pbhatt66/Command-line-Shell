@@ -148,6 +148,7 @@ WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND, AND THEN RUN "testTest1"
 - wildcards
     - using wildcards with built-ins
         - ex: ls *.c
+        - ls testFolder2/te*.txt
     - using wildcards with other commands
         - ex: cat *.txt
     - no matching files found
@@ -186,8 +187,10 @@ WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND, AND THEN RUN "testTest1"
 - conditinals
     - then
         - calling then/else after "which ls" (true)
+            - testResults1.txt should display "test1 passed"
     - else
         - calling then/else after "pwd a" (false)
+            - testResults2.txt should display "test2 failed"
 
 - bare names
     - 

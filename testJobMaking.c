@@ -2,27 +2,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include "job.h"
+#include "arraylist.h"
+
+
+void testJob(char* input){
+    printf("Given |%s|, the\n", input);
+    Job* job = makeJob(input);
+    printJob(job);
+    free(job);
+}
 
 /**
- * @brief Test the job.c makeJob() func here
+ * @brief Test the job.c makeJob() func here. No pipes.
  */
 int main(int argc, char const *argv[])
 {
-    char* jobCmd = "foo < bar baz";
-    Job* job = makeJob(jobCmd);
-    printf("execPath: %s\n", job->execPath);
-    printf("args: %s\n", job->args[0]);
-    printf("inputReDirectPath: %s\n", job->inputReDirectPath);
-    printf("outputReDirectPath: %s\n", job->outputReDirectPath);
-
-    jobCmd = "foo bar > baz";
-    Job* newjob = makeJob(jobCmd);
-    printf("execPath: %s\n", newjob->execPath);
-    printf("args: %s\n", newjob->args[0]);
-    printf("inputReDirectPath: %s\n", newjob->inputReDirectPath);
-    printf("outputReDirectPath: %s\n", newjob->outputReDirectPath);
-
-    freeJob(job);
-    freeJob(newjob);
-    return 0;
+    testJob("echo man name >    txt.txt");
+    testJob("cat <  txt.txt     ");
+    testJob("ls *.c");
+    testJob("ls *.java >txt.txt");
+    testJob("ls testFolder2/*.txt >txt.txt");
+    testJob("pwd");
+    return EXIT_SUCCESS;
 }
+

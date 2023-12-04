@@ -14,9 +14,9 @@
 int mysh_errno = MYSH_EXIT_SUCCESS;
 
 /**
- * @brief 
+ * @brief Goes through each character in the str, and makes sure it is not blank space
  * 
- * @param s 
+ * @param s The str to check
  * @return int 1 if fully white space, 0 if not
  */
 int strisempty(char *s) {
@@ -27,6 +27,12 @@ int strisempty(char *s) {
   }
   return 1;
 }
+/**
+ * @brief Removes leading and trailing white space from a str
+ * 
+ * @param s The str to trim
+ * @return char* The same ptr to s
+ */
 char* removeLeadingTrailingSpace(char *s){
     //rmv white space from start
     while(isspace(s[0])) {
@@ -41,6 +47,12 @@ char* removeLeadingTrailingSpace(char *s){
     return s;
 }
 
+/**
+ * @brief This runs a non-builtin job
+ * 
+ * @param job The Job to run
+ * @return int 0 if fail, 1 if success
+ */
 int runJob(Job* job){
     if(strcmp(job->inputReDirectPath, "") != 0){
         //input redircetion
@@ -68,10 +80,14 @@ int runJob(Job* job){
     fprintf(stderr, "mysh: command not found: %s\n", job->args[0]);
     exit(EXIT_FAILURE);
 }
+/**
+ * @brief This runs a builtin job. This also resets the input/output redir once done
+ * 
+ * @param job The Job to run
+ * @return int 0 if fail, 1 if success
+ */
 int runBuiltInJob(Job* job){
     int exit_status = MYSH_EXIT_FAILURE;
-    // int dupedInfd = dup(STDIN_FILENO);
-    // int dupedOutfd = dup(STDOUT_FILENO);
     int dupedInfd = dup(fileno(stdin));
     int dupedOutfd = dup(fileno(stdout));
     //setup redierection
@@ -94,6 +110,7 @@ int runBuiltInJob(Job* job){
             exit_status = MYSH_EXIT_FAILURE;
         }
     }
+    //run job
     if(strcmp(job->execPath, "cd") == 0){
         exit_status = cd(job);
     } else if (strcmp(job->execPath, "pwd") == 0){
@@ -101,6 +118,7 @@ int runBuiltInJob(Job* job){
     } else if (strcmp(job->execPath, "which") == 0){
         exit_status = which(job);
     } 
+    //reset stdin and out
     if(strcmp(job->inputReDirectPath, "") != 0){
         dup2(dupedInfd, STDIN_FILENO);
     } 
@@ -112,6 +130,13 @@ int runBuiltInJob(Job* job){
     return exit_status;
 
 }
+/**
+ * @brief This runs a list of jobs.
+ * 
+ * @param jobs List of jobs, Max 2
+ * @param numOfJobs Num of jobs, Max 2
+ * @return int int 0 if fail, 1 if success
+ */
 int runJobs(Job** jobs, int numOfJobs){
     if(numOfJobs == 1){
         if(isBuiltIn(jobs[0]->execPath)){
@@ -169,14 +194,14 @@ int runJobs(Job** jobs, int numOfJobs){
  * Once the array of jobs are built, it will call loop through each job, and deal with
  * making pipes, input/output redirects, and conditionals.
  * 
- * @param cmd 1 cmd literal
+ * @param cmd 1 cmd token until new line
  * @return int MYSH_EXIT_SUCCESS | MYSH_EXIT_FAILURE
  */
 int accept_cmd_line(char *cmd) {
     if(strisempty(cmd)) return MYSH_EXIT_UNDEF;
     if(strcmp(cmd, ""))
     cmd = removeLeadingTrailingSpace(cmd);
-    if(cmd[strlen(cmd)-1] == '|'){
+    if(cmd[strlen(cmd)-1] == '|' || cmd[0] == '|'){ //if ends or starts in |
         fprintf(stderr, "mysh: could not parse command\n");
         return MYSH_EXIT_FAILURE;
     }
@@ -213,14 +238,18 @@ int accept_cmd_line(char *cmd) {
     return MYSH_EXIT_FAILURE;
 }
 /**
- * @brief Prints "mysh> ", and force flushes stdout, so the printf call 
- * is printed since there is no "\n" character
+ * @brief Prints "mysh> " using write
  */
 void promptNextCMD(){
     write(STDOUT_FILENO, "mysh> ", 7);
     // printf("mysh> ");
     // fflush(stdout);
 }
+/**
+ * @brief This checks for then and else statments.
+ * 
+ * @param line The cmd line until new line
+ */
 void accept_line(char* line){
     if(strncmp(line, "then", COND_END_INDEX) == 0){
         // printf("Checking then\n");

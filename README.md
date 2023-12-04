@@ -7,9 +7,9 @@ MakeFile:
 - make mysh:
     run this cmd to make a excuatble file called "mysh"
     to run the file, use "./mysh"
-- make test:
-    run this cmd to test mysh
-    this makes mysh excuatble, and then runs ./mysh with .sh file
+- make testJobMaking:
+    run this cmd to test that we are making a job properly.
+    to run the file, use "./testJobMaking"
 - B flag: include -B in any of the cmds above to force rebuild the excutable file
 - DEBUG:
     edit the Makefile and change line 2 to "DEBUG = -D DEBUG=1"
@@ -45,7 +45,6 @@ Important Notes:
     - |ls|   echo man|
     - |ls        |      echo man|
     - |         ls        |      echo man        |
-- use fflush bc printf() does not print until read() stops blocking
 - only use single pipes. no mutli-pipes cmds
 - tab completion, and up arrow for last cmd does not work.
 - to see how the builtins work, go to Implemntation->builtins.c

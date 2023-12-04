@@ -12,6 +12,14 @@
 #include "arraylist.h"
 #include "builtins.h"
 
+/**
+ * @brief This function checks if the program exists in the given path
+ * 
+ * @param pathToCheck The path to check in.
+ * @param bareName The bare name of the program
+ * @param lenOfBareName The len of the bare name
+ * @return char* The fullpath, or NULL if not found
+ */
 char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
     size_t lenOfpath1PlusBareName = strlen(pathToCheck) + 1 + lenOfBareName; //len w/o terminator
     char* path1PlusBareName = malloc(lenOfpath1PlusBareName + 1);
@@ -26,8 +34,9 @@ char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
 }
 
 /**
- * @brief This utility function checks if a directory entry is . or .. or hiden(starts with .)
- * Serves as a base case for the recursion
+ * @brief This utility function checks if a
+ * directory entry is . or .. or hiden(starts with .)
+ * Makes sure we do not check for wildcard expansion with hidden files, or . or ..
  * 
  * @param name The name of the file
  * @return int 1 if it is, 0 if it is not
@@ -43,7 +52,15 @@ int isItSelfOrParrentDirOrHidden(char* name){
     return 0;
 }
 
-void handleWildcards(char* arg, arraylist_t* argList) {
+/**
+ * @brief This function handles wildcards. Up to the client to insure that
+ * the function is only called after detecting a proper *.
+ * 
+ * @param arg The wildcard pattern to expand
+ * @param argList The arraylist to add to
+ * @return int 0 if no matches found. 1 if matches found
+ */
+int  handleWildcards(char* arg, arraylist_t* argList) {
     char* slash = strchr(arg, '/');
     char* dir_part;
     char* file_part;
@@ -59,8 +76,7 @@ void handleWildcards(char* arg, arraylist_t* argList) {
     }
     DIR *dir = opendir(dir_part);
     if (dir == NULL) {
-        fprintf(stderr, "Error: opendir() failed\n");
-        return;
+        return 0;
     }
     struct dirent *entry;
     int found = 0;
@@ -73,30 +89,21 @@ void handleWildcards(char* arg, arraylist_t* argList) {
         char* pathCopy = strdup(entry->d_name);
         if (dir_part[0] != '.') {
             temp = malloc(sizeof(char) * (strlen(dir_part) + strlen(pathCopy) + 2));
-            // printf("dir_part: |%s|\n", dir_part);
             strcpy(temp, dir_part);
             strcat(temp, "/");
             strcat(temp, pathCopy);
-            // al_push(argList, temp);
         }
         else {
             temp = entry->d_name;
         }
-        // strcpy(temp, entry->d_name);
-        // strcat(temp, file_part);
-        // printf("temp: |%s|\n", temp);
         if(stat(temp, &stats) == 0){
             if (!S_ISREG(stats.st_mode)) {
-                // printf("here\n");
                 continue;
             }
         }
         if (fnmatch(file_part, entry->d_name, 0) == 0) {
-            // char* pathCopy = strdup(entry->d_name);
-            // printf("dir_path: |%s|\n", dir_part);
             if (dir_part[0] != '.') {
                 char* newPath = malloc(sizeof(char) * (strlen(dir_part) + strlen(pathCopy) + 2));
-                // printf("dir_part: |%s|\n", dir_part);
                 strcpy(newPath, dir_part);
                 strcat(newPath, "/");
                 strcat(newPath, pathCopy);
@@ -110,11 +117,35 @@ void handleWildcards(char* arg, arraylist_t* argList) {
     }
     closedir(dir);
     if (!found) {
-        char* pathCopy = strdup(arg);
-        al_push(argList, pathCopy);
+        return 0;
+    }
+    return 1;
+}   
+/**
+ * @brief Make sure a * happens after the last / in the path name
+ * 
+ * @param name The wildcard pattern
+ * @return int 1 if true, 0 if false
+ */
+int isRegexInLastPath(char *name){
+    char* locOfLastSlash = strrchr(name, '/');
+    char* locOfFirstAshtrik = strchr(name, '*');
+    if(locOfFirstAshtrik == NULL){
+        // if no *
+        return 0;
+    }
+    if (locOfLastSlash == NULL) {
+        // if no / and at this point, the name must have a *
+        return 1;
+    }
+    if (locOfFirstAshtrik > locOfLastSlash) {
+        // the name contains a * and a slash
+        // if the astrik occurs after the slash
+        return 1;
+    } else {
+        return 0;
     }
 }
-
 /**
  * @brief This takes in the string job cmd, and returns a Job Struct pointer
  * Example Inputs/Outputs: 
@@ -148,30 +179,14 @@ void handleWildcards(char* arg, arraylist_t* argList) {
  * 
  * There will be no pipes, or conditinals in the input string
  * @param jobCmds 
- * @return Job* | NULL if parsing error
+ * @return Job* A job if succesfull or NULL if parsing error
  */
 Job *makeJob(char* jobCmd){
-    //deals with wildcards, input/output redirection, and execPath finder(bare names)
-    //also make sepereate .c files to deal with cd, pwd, which, bc these 3 cmds, we are
-    //suppose to implement.
     Job* job = malloc(sizeof(Job));
-    //job->execPath = malloc(sizeof(char) * 256);
-    //job->args = malloc(sizeof(char *) * 256);
-    // for(int i = 0; i < 256; i++){
-    //     job->args[i] = malloc(sizeof(char) * 256);
-    // }
     job->inputReDirectPath = malloc(sizeof(char) * 256);
     job->outputReDirectPath = malloc(sizeof(char) * 256);
-
-    // initialize all fields to null originally
-    //job->execPath[0] = '\0';
-    // for(int i = 0; i < 256; i++){
-    //     job->args[i][0] = '\0';
-    // }
     job->inputReDirectPath[0] = '\0';
     job->outputReDirectPath[0] = '\0';
-
-    //int jobCmdLen = strlen(jobCmd);
    
     if(strlen(jobCmd) == 0) return NULL;
     char* endOfBareName = strpbrk(jobCmd, " \t\r"); //get a ptr to first ' ' or '\r' or '\t' in jobCmd
@@ -180,7 +195,7 @@ Job *makeJob(char* jobCmd){
     char* bareName = malloc((lenOfBareName + 1) * sizeof(char)); //malloc lenOfBareName + terminator
     strncpy(bareName, jobCmd, lenOfBareName); //cpy barename
     bareName[lenOfBareName] = '\0';           //append terminator
-    printf("Parsing: |%s|\n", bareName);
+
     arraylist_t* argList = al_create(1);
     if(strchr(bareName, '/')){
         job->execPath = bareName;
@@ -195,13 +210,8 @@ Job *makeJob(char* jobCmd){
         }
         free(bareName);
     }
-    // }
-
-    //make argList
-    // arraylist_t* argList = al_create(1);
     int i = 0;
-    printf("jobCmd: |%s|\n", jobCmd);
-    // int argsIndex = 0;
+    //printf("jobCmd: |%s|\n", jobCmd);
     while (jobCmd[i] != '\0'){
         if(isspace(jobCmd[i])){
             i++;
@@ -251,27 +261,13 @@ Job *makeJob(char* jobCmd){
                 j++;
             }
             currArg[j] = '\0';
-            printf("|%s|\n", currArg);
-
-            if (strchr(currArg, '*') != NULL) {
-                // glob_t glob_result;
-                // memset(&glob_result, 0, sizeof(glob_result));
-
-                // int return_value = glob(currArg, GLOB_TILDE, NULL, &glob_result);
-                // if (return_value != 0) {
-                //     globfree(&glob_result);
-                //     fprintf(stderr, "Error: glob() failed\n");
-                //     return NULL;
-                // }
-                // for (size_t i = 0; i < glob_result.gl_pathc; i++) {
-                //     char* pathCopy = strdup(glob_result.gl_pathv[i]);
-                //     al_push(argList, pathCopy);
-                // }
-                // globfree(&glob_result);
-                handleWildcards(currArg, argList);
+            //printf("|%s|\n", currArg);
+            if(isRegexInLastPath(currArg)) {
+                if(!handleWildcards(currArg, argList)) {
+                    al_push(argList, currArg);
+                }
             } else {
-            al_push(argList, currArg);
-            // argsIndex++;
+                al_push(argList, currArg);
             }
         }
             
@@ -289,7 +285,11 @@ Job *makeJob(char* jobCmd){
     return job;
 }
 
-// free the job struct
+/**
+ * @brief This free a given Job
+ * 
+ * @param job The job to free
+ */
 void freeJob(Job* job){
     free(job->execPath);
     for(int i = 0; i < job->numOfArgs; i++){
@@ -300,6 +300,12 @@ void freeJob(Job* job){
     free(job->outputReDirectPath);
     free(job);
 }
+
+/**
+ * @brief This prints a given Job
+ * 
+ * @param job The job to print
+ */
 void printJob(Job* job){
     printf("Job: \n");
     printf("\tExec: %s\n", job->execPath);
@@ -307,11 +313,6 @@ void printJob(Job* job){
     for(int i = 0; i < job->numOfArgs+1; i++){
         printf("|%s|", job->args[i]);
     }
-    // while (strcmp(job->args[i], ""))
-    // {
-    //     printf("|%s|", job->args[i]);
-    //     i++;
-    // }
     printf("\n");
     printf("\tInRe: %s\n", job->inputReDirectPath);
     printf("\tOuRe: %s\n", job->outputReDirectPath);

@@ -13,6 +13,9 @@ MakeFile:
 - make testTest1:
     run this cmd to test the test.sh file in batch mode
     to run the file, use "./testTest1"
+- make removeTXTFiles"
+    run this cmd to remove the .txt files that were created when running the test.sh file in batch mode
+    to run the file, use " make removeTXTFiles"
 - B flag: include -B in any of the cmds above to force rebuild the excutable file
 - DEBUG:
     edit the Makefile and change line 2 to "DEBUG = -D DEBUG=1"

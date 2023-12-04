@@ -5,6 +5,19 @@ mysh: mysh.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
 testJobMaking: testJobMaking.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
+
+sumFunction: sumFunction.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+squareFunction: squareFunction.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+sumFunction.o: sumFunction.c
+	$(CC) $(CFLAGS) -c $^
+
+squareFunction.o: squareFunction.c
+	$(CC) $(CFLAGS) -c $^
+
 *.o: *.h 
 
 clean:

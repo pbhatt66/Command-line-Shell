@@ -137,5 +137,47 @@ Implemntation
     - see test section
 - librarys:
     - used arraylist.c from class 
+
 Tests:
+- wildcards
+    - using wildcards with built-ins
+        - ex: ls *.c
+    - using wildcards with other commands
+        - ex: cat *.txt
+    - no matching files found
+        - return default output that normal shell would return
+- redirection
+    - input redirection
+        - ex: sumFunction < sumTest.txt
+    - output redirection
+        - using redirection with built-ins
+            - ex: pwd > output.txt
+    - using multiple redirections together
+            - ex: 
+    
+- pipe
+    - using pipes with the other functions and built-ins
+    - using pipes with redirection
+        - ex: 
+- builtins
+    - cd
+        - cd with no args
+            - print out error
+        - cd with 1 arg
+        - cd with 2+ args
+            - print out error
+    - pwd
+        - pwd with no args
+        - pwd with 1+ args
+            - print out error
+    - which
+        - called with no args
+            - print out error (or print out nothing)
+        - called with 1 arg 
+        - called with 2+ args
+- conditinals
+    - then
+    - else
+
+- bare names
 

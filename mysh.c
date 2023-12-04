@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <sys/errno.h>
 #include <ctype.h>
-
 #include "builtins.h"
 #include "job.h"
 #include "mysh_lib.h"
@@ -196,6 +195,7 @@ int accept_cmd_line(char *cmd) {
             fprintf(stderr, "mysh: could not parse command\n");
             return MYSH_EXIT_FAILURE;
         }
+        
         //printJob(jobsMade[numOfJobs]);
         tok = strtok_r(NULL, "|", &restOfCmd);
         numOfJobs++;

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <glob.h>
 #include "job.h"
 #include "arraylist.h"
 #include "builtins.h"
@@ -85,7 +86,8 @@ Job *makeJob(char* jobCmd){
     char* bareName = malloc((lenOfBareName + 1) * sizeof(char)); //malloc lenOfBareName + terminator
     strncpy(bareName, jobCmd, lenOfBareName); //cpy barename
     bareName[lenOfBareName] = '\0';           //append terminator
-    //printf("Parsing: |%s|\n", bareName);
+    printf("Parsing: |%s|\n", bareName);
+    arraylist_t* argList = al_create(1);
     if(strchr(bareName, '/')){
         job->execPath = bareName;
     } 
@@ -99,10 +101,12 @@ Job *makeJob(char* jobCmd){
         }
         free(bareName);
     }
+    // }
 
     //make argList
-    arraylist_t* argList = al_create(1);
+    // arraylist_t* argList = al_create(1);
     int i = 0;
+    printf("jobCmd: |%s|\n", jobCmd);
     // int argsIndex = 0;
     while (jobCmd[i] != '\0'){
         if(isspace(jobCmd[i])){
@@ -153,9 +157,27 @@ Job *makeJob(char* jobCmd){
                 j++;
             }
             currArg[j] = '\0';
-            //printf("|%s|\n", currArg);
+            printf("|%s|\n", currArg);
+
+            if (strchr(currArg, '*') != NULL) {
+                glob_t glob_result;
+                memset(&glob_result, 0, sizeof(glob_result));
+
+                int return_value = glob(currArg, GLOB_TILDE, NULL, &glob_result);
+                if (return_value != 0) {
+                    globfree(&glob_result);
+                    fprintf(stderr, "Error: glob() failed\n");
+                    return NULL;
+                }
+                for (size_t i = 0; i < glob_result.gl_pathc; i++) {
+                    char* pathCopy = strdup(glob_result.gl_pathv[i]);
+                    al_push(argList, pathCopy);
+                }
+                globfree(&glob_result);
+            } else {
             al_push(argList, currArg);
             // argsIndex++;
+            }
         }
             
     }

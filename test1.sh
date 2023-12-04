@@ -20,5 +20,5 @@ then echo "test1.sh passed" > testResults.txt
 else echo "test1.sh failed" > testResults.txt
 
 pwd a
-then echo "test1.sh passed" > testResults2.txt
-else echo "test1.sh failed" > testResults2.txt
+then echo "test2.sh passed" > testResults2.txt
+else echo "test2.sh failed" > testResults2.txt

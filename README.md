@@ -162,7 +162,7 @@ Tests:
         - this will test that we are expandins/parsing the bare names, input/output
         redirections, and wildcards properly. 
         - Input1: "echo man name >    txt.txt"
-            - checking redirection, bare name exapansion, blank space check
+            - checking output redirection, bare name exapansion, blank space check
             - Expected Output:
                 Job: 
                     Exec: /bin/echo
@@ -170,7 +170,7 @@ Tests:
                     InRe: 
                     OuRe: txt.txt
         - Input2: "cat <  txt.txt     "
-            - checking redirection, bare name exapansion
+            - checking input redirection, bare name exapansion, blank space check
             - Expected Output:
                 Job: 
                     Exec: /bin/cat
@@ -178,7 +178,7 @@ Tests:
                     InRe: txt.txt
                     OuRe: 
         - Input3: "ls *.c"
-            - checking redirection, bare name exapansion
+            - checking bare name exapansion, wildcards
             - Expected Output:
                 Job: 
                     Exec: /bin/ls
@@ -186,7 +186,7 @@ Tests:
                     InRe: 
                     OuRe: 
         - Input4: "ls *.java >txt.txt"
-            - checking redirection, bare name exapansion
+            - checking redirection, bare name exapansion, wildcards
             - Expected Output:
                  Job: 
                     Exec: /bin/ls
@@ -194,7 +194,7 @@ Tests:
                     InRe: 
                     OuRe: txt.txt
         - Input5: "ls testFolder2/*.txt >txt.txt"
-            - checking redirection, bare name exapansion
+            - checking redirection, bare name exapansion, wildcards in end of paths
             - Expected Output:
                 Job: 
                     Exec: /bin/ls
@@ -202,7 +202,7 @@ Tests:
                     InRe: 
                     OuRe: txt.txt
         - Input6: "pwd"
-            - checking redirection, bare name exapansion
+            - checking builtins
             - Expected Output:
                 Job: 
                     Exec: pwd

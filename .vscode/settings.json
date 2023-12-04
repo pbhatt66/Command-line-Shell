@@ -12,6 +12,9 @@
         "_xlocale.h": "c",
         "mysh_lib.h": "c",
         "job.h": "c",
-        "ctype.h": "c"
+        "ctype.h": "c",
+        "types.h": "c",
+        "stat.h": "c",
+        "wait.h": "c"
     }
 }

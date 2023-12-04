@@ -4,10 +4,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <ctype.h>
 #include "builtins.h"
 #include "job.h"
 #include "mysh_lib.h"
+
 #define BUFSIZE 256
 #define SLEEPLEN 5
 

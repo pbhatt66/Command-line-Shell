@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <glob.h>
+#include <dirent.h>
+#include <fnmatch.h>
+#include <string.h>
+#include <sys/stat.h>
 #include "job.h"
 #include "arraylist.h"
 #include "builtins.h"
@@ -18,6 +22,96 @@ char* my_acess(char* pathToCheck, char* bareName, size_t lenOfBareName){
     else{
         free(path1PlusBareName);
         return NULL;
+    }
+}
+
+/**
+ * @brief This utility function checks if a directory entry is . or .. or hiden(starts with .)
+ * Serves as a base case for the recursion
+ * 
+ * @param name The name of the file
+ * @return int 1 if it is, 0 if it is not
+ */
+int isItSelfOrParrentDirOrHidden(char* name){
+
+    if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0){
+        return 1;
+    }
+    if(name[0] == '.'){
+        return 1;
+    }
+    return 0;
+}
+
+void handleWildcards(char* arg, arraylist_t* argList) {
+    char* slash = strchr(arg, '/');
+    char* dir_part;
+    char* file_part;
+
+    if (slash) {
+        *slash = '\0';
+        dir_part = arg;
+        file_part = slash + 1;
+    }
+    else {
+        dir_part = ".";
+        file_part = arg;
+    }
+    DIR *dir = opendir(dir_part);
+    if (dir == NULL) {
+        fprintf(stderr, "Error: opendir() failed\n");
+        return;
+    }
+    struct dirent *entry;
+    int found = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (isItSelfOrParrentDirOrHidden(entry->d_name)) {
+            continue;
+        }
+        struct stat stats;
+        char* temp;
+        char* pathCopy = strdup(entry->d_name);
+        if (dir_part[0] != '.') {
+            temp = malloc(sizeof(char) * (strlen(dir_part) + strlen(pathCopy) + 2));
+            // printf("dir_part: |%s|\n", dir_part);
+            strcpy(temp, dir_part);
+            strcat(temp, "/");
+            strcat(temp, pathCopy);
+            // al_push(argList, temp);
+        }
+        else {
+            temp = entry->d_name;
+        }
+        // strcpy(temp, entry->d_name);
+        // strcat(temp, file_part);
+        // printf("temp: |%s|\n", temp);
+        if(stat(temp, &stats) == 0){
+            if (!S_ISREG(stats.st_mode)) {
+                // printf("here\n");
+                continue;
+            }
+        }
+        if (fnmatch(file_part, entry->d_name, 0) == 0) {
+            // char* pathCopy = strdup(entry->d_name);
+            // printf("dir_path: |%s|\n", dir_part);
+            if (dir_part[0] != '.') {
+                char* newPath = malloc(sizeof(char) * (strlen(dir_part) + strlen(pathCopy) + 2));
+                // printf("dir_part: |%s|\n", dir_part);
+                strcpy(newPath, dir_part);
+                strcat(newPath, "/");
+                strcat(newPath, pathCopy);
+                al_push(argList, newPath);
+            }
+            else {
+                al_push(argList, pathCopy);
+            }
+            found = 1;
+        }
+    }
+    closedir(dir);
+    if (!found) {
+        char* pathCopy = strdup(arg);
+        al_push(argList, pathCopy);
     }
 }
 
@@ -160,20 +254,21 @@ Job *makeJob(char* jobCmd){
             printf("|%s|\n", currArg);
 
             if (strchr(currArg, '*') != NULL) {
-                glob_t glob_result;
-                memset(&glob_result, 0, sizeof(glob_result));
+                // glob_t glob_result;
+                // memset(&glob_result, 0, sizeof(glob_result));
 
-                int return_value = glob(currArg, GLOB_TILDE, NULL, &glob_result);
-                if (return_value != 0) {
-                    globfree(&glob_result);
-                    fprintf(stderr, "Error: glob() failed\n");
-                    return NULL;
-                }
-                for (size_t i = 0; i < glob_result.gl_pathc; i++) {
-                    char* pathCopy = strdup(glob_result.gl_pathv[i]);
-                    al_push(argList, pathCopy);
-                }
-                globfree(&glob_result);
+                // int return_value = glob(currArg, GLOB_TILDE, NULL, &glob_result);
+                // if (return_value != 0) {
+                //     globfree(&glob_result);
+                //     fprintf(stderr, "Error: glob() failed\n");
+                //     return NULL;
+                // }
+                // for (size_t i = 0; i < glob_result.gl_pathc; i++) {
+                //     char* pathCopy = strdup(glob_result.gl_pathv[i]);
+                //     al_push(argList, pathCopy);
+                // }
+                // globfree(&glob_result);
+                handleWildcards(currArg, argList);
             } else {
             al_push(argList, currArg);
             // argsIndex++;

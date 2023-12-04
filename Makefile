@@ -5,7 +5,7 @@ mysh: mysh.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
 testJobMaking: testJobMaking.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
-batchmodetest: mysh sumFunction squareFunction
+batchmodetest: clean mysh sumFunction squareFunction
 	./mysh test1.sh
 sumFunction: sumFunction.o
 	$(CC) $(CFLAGS) -o $@ $^
@@ -25,4 +25,4 @@ removeTXTFiles:
 	rm -f -r directory.txt sumOutput.txt testResults.txt testResults2.txt 
 
 clean: removeTXTFiles
-	rm -f -r *.o *.dSYM mysh testJobMaking sumFunction squareFunction
+	rm -f -r *.gch *.o *.dSYM mysh testJobMaking sumFunction squareFunction

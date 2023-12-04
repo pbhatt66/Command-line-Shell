@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 500
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -243,6 +244,7 @@ int accept_cmd_line(char *cmd) {
     for(int i = 0; i < numOfJobs; i++){
         freeJob(jobsMade[i]);
     }
+    free(jobsMade);
     if(returnStatus == MYSH_EXIT_SUCCESS){
         //printf("Job Succed\n");
         return MYSH_EXIT_SUCCESS;

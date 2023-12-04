@@ -1,5 +1,8 @@
 ls *.c
+ls testFolder2/
+ls testFolder2/*t
 cat *.txt
+echo
 ls *.java
 ls in*.txt
 

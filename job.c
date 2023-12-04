@@ -86,9 +86,15 @@ int  handleWildcards(char* arg, arraylist_t* argList) {
         }
         struct stat stats;
         char* temp;
-        char* pathCopy = strdup(entry->d_name);
+        int sizeofpathcpy = strlen(entry->d_name);
+        //printf("Size of %lu\n", strlen(entry->d_name));
+        char* pathCopy = malloc(sizeof(char) * (sizeofpathcpy + 1));
+        strcpy(pathCopy, entry->d_name);
+        //char* pathCopy = strdup(entry->d_name);
+        int malloced = 0;
         if (dir_part[0] != '.') {
             temp = malloc(sizeof(char) * (strlen(dir_part) + strlen(pathCopy) + 2));
+            malloced = 1;
             strcpy(temp, dir_part);
             strcat(temp, "/");
             strcat(temp, pathCopy);
@@ -97,9 +103,12 @@ int  handleWildcards(char* arg, arraylist_t* argList) {
             temp = entry->d_name;
         }
         if(stat(temp, &stats) == 0){
+            if (malloced) free(temp);
             if (!S_ISREG(stats.st_mode)) {
                 continue;
             }
+        } else {
+            if (malloced) free(temp);
         }
         if (fnmatch(file_part, entry->d_name, 0) == 0) {
             if (dir_part[0] != '.') {
@@ -108,11 +117,14 @@ int  handleWildcards(char* arg, arraylist_t* argList) {
                 strcat(newPath, "/");
                 strcat(newPath, pathCopy);
                 al_push(argList, newPath);
+                free(pathCopy);
             }
             else {
                 al_push(argList, pathCopy);
             }
             found = 1;
+        } else {
+            free(pathCopy);
         }
     }
     closedir(dir);
@@ -266,6 +278,9 @@ Job *makeJob(char* jobCmd){
                 if(!handleWildcards(currArg, argList)) {
                     al_push(argList, currArg);
                 }
+                else {
+                    free(currArg);
+                }
             } else {
                 al_push(argList, currArg);
             }
@@ -279,6 +294,7 @@ Job *makeJob(char* jobCmd){
         al_pop(argList, &arg);
         job->args[i] = malloc((sizeof(char) * strlen(arg)) + 1);
         strcpy(job->args[i], arg);
+        free(arg);
     }
     job->args[job->numOfArgs] = NULL;
     al_destroy(argList);

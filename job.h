@@ -1,3 +1,4 @@
+#include <stddef.h>
 #ifndef JOB
 #define JOB
 typedef struct Job {

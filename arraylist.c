@@ -39,6 +39,8 @@ arraylist_t *al_create(unsigned capacity)
 void al_destroy(arraylist_t *L)
 {
     free(L->data);
+    
+
 }
 
 unsigned al_length(arraylist_t *L)
@@ -53,15 +55,15 @@ int al_push(arraylist_t *L, elem_t elem)
 {
     // check whether array is full
     if (L->size == L->length) {
-	// increase capacity
-	int new_size = L->size * 2;
+        // increase capacity
+        int new_size = L->size * 2;
 
-	elem_t *new_data = realloc(L->data, new_size * sizeof(elem_t));
-	if (new_data == NULL) return 0;
+        elem_t *new_data = realloc(L->data, new_size * sizeof(elem_t));
+        if (new_data == NULL) return 0;
 
-	if (DEBUG) printf("Increased size to %d from %d\n", new_size, L->size);
-	L->size = new_size;
-	L->data = new_data;
+        if (DEBUG) printf("Increased size to %d from %d\n", new_size, L->size);
+        L->size = new_size;
+        L->data = new_data;
     }
 
     L->data[L->length] = elem;

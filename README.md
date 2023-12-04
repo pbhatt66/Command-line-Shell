@@ -149,6 +149,7 @@ Tests:
 - redirection
     - input redirection
         - ex: sumFunction < sumTest.txt
+            - the sumFunction is a simple program written that adds up all the numbers in a file. We are passing in a file sumTest as input redirection
     - output redirection
         - using redirection with built-ins
             - ex: pwd > output.txt

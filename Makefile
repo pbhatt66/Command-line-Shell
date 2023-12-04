@@ -6,6 +6,7 @@ mysh: mysh.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^ 
 testJobMaking: testJobMaking.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
+	./testJobMaking
 batchmodetest: clean mysh sumFunction squareFunction
 	./mysh test1.sh 
 sumFunction: sumFunction.o

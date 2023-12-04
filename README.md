@@ -9,13 +9,13 @@ MakeFile:
     to run the file, use "./mysh"
 - make testJobMaking:
     run this cmd to test that we are making a job properly.
-    to run the file, use "./testJobMaking"
-- make testTest1:
+    look at Test->Test Interactive Mode section
+- make batchmodetest:
     run this cmd to test the test.sh file in batch mode
     to run the file, use "./testTest1"
-- make removeTXTFiles"
+- make removeTXTFiles:
     run this cmd to remove the .txt files that were created when running the test.sh file in batch mode
-    to run the file, use " make removeTXTFiles"
+    to use: "make removeTXTFiles"
 - B flag: include -B in any of the cmds above to force rebuild the excutable file
 - DEBUG:
     edit the Makefile and change line 2 to "DEBUG = -D DEBUG=1"
@@ -27,9 +27,16 @@ MakeFile:
 
 Overview:
 - Interactive Mode:
+    - Used to run 1 cmd at a time
 - Batch Mode:
+    - Used to run all the given cmds one after another, until exit cmd is reached
+    - or will stop at EOF.
 
 Important Notes:
+- testing batchmode with our .sh file:
+    use the cmd in the Makefile. "make batchmodetest"
+- quotes:
+    mysh does not deal with quotes. there are just treated as normal characters
 - escaped space: 
     mysh does not deal with spaces in file names or dir. 
     in a normal terminal they are dealt with by escaping the space:('\ ')
@@ -45,12 +52,12 @@ Important Notes:
     - the token "exit" in a argument name(ex: "echo exit")
         will not exit mysh
 - all white space is ingnored, even btw arguments
-- the follwing commands mean the same thing.
-    - |ls|echo man|
-    - |ls   |echo         man|
-    - |ls|   echo man|
-    - |ls        |      echo man|
-    - |         ls        |      echo man        |
+    - the follwing commands mean the same thing.
+        - |ls|echo man|
+        - |ls   |echo         man|
+        - |ls|   echo man|
+        - |ls        |      echo man|
+        - |         ls        |      echo man        |
 - only use single pipes. no mutli-pipes cmds
 - tab completion, and up arrow for last cmd does not work.
 - to see how the builtins work, go to Implemntation->builtins.c
@@ -69,8 +76,12 @@ Implemntation
             - prorgram name -> arg1.... -> NULL
             - expanded using wildcards
                 - only 1 '*' allowed
+                - wildcard expansion:
+                    - if nothing to expand to, orginal arg is passed in
+                    - if its a path, the * must happen in the last part of the path.
+                    - Matches to zero or more chrs that replace *
         int numOfArgs:
-            - len of the args array
+            - len of the args array, not including the null ender in the list of args
         char* inputReDirectPath:
             - arg followed by '<'
             - "" if there is no '<'
@@ -136,61 +147,120 @@ Implemntation
                         - OFFICE HOURS
                     - builtin | builtin
                         - OFFICE HOURS
-- test.sh:
+- test1.sh && testJobMaking.c:
     - holds a list of cmds to test mysh
-    - run with ./mysh test.sh or make test
-    - see test section
+    - see Test section
 - librarys:
     - used arraylist.c from class 
 
 Tests:
-WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND, AND THEN RUN "testTest1"
-- wildcards
-    - using wildcards with built-ins
-        - ex: ls *.c
-        - ls testFolder2/te*.txt
-    - using wildcards with other commands
-        - ex: cat *.txt
-    - no matching files found
-        - return default output that normal shell would return
-- redirection
-    - input redirection
-        - ex: sumFunction < sumTest.txt
-            - the sumFunction is a simple program written that adds up all the numbers in a file. We are passing in a file sumTest as input redirection
-    - output redirection
-        - using redirection with built-ins
-            - ex: pwd > output.txt
-    - using multiple redirections together
-            - ex: ./sumFunction < sumTest.txt > sumOutput.txt
-    
-- pipe
-    - using pipes with the other functions and built-ins
-        - 
-    - using pipes with redirection
-        - ex: ./sumFunction < sumTest.txt | ./squareFunction
-- builtins
-    - cd
-        - cd with no args
-            - print out error
-        - cd with 1 arg
-        - cd with 2+ args
-            - print out error
-    - pwd
-        - pwd with no args
-        - pwd with 1+ args
-            - print out error
-    - which
-        - called with no args
-            - print out error (or print out nothing)
-        - called with 1 arg 
-        - called with 2+ args
-- conditinals
-    - then
-        - calling then/else after "which ls" (true)
-            - testResults1.txt should display "test1 passed"
-    - else
-        - calling then/else after "pwd a" (false)
-            - testResults2.txt should display "test2 failed"
+- Test Interactive Mode:
+    In interactive mode, we want to check that mysh is parsing the typed
+    in input correctly. So we are going to use the:
+    testJobMaking.c:
+        - Look at make seciton to see how to run it
+        - this will test that we are expandins/parsing the bare names, input/output
+        redirections, and wildcards properly. 
+        - Input1: "echo man name >    txt.txt"
+            - checking redirection, bare name exapansion, blank space check
+            - Expected Output:
+                Job: 
+                    Exec: /bin/echo
+                    Args: |echo||man||name||(null)|
+                    InRe: 
+                    OuRe: txt.txt
+        - Input2: "cat <  txt.txt     "
+            - checking redirection, bare name exapansion
+            - Expected Output:
+                Job: 
+                    Exec: /bin/cat
+                    Args: |cat||(null)|
+                    InRe: txt.txt
+                    OuRe: 
+        - Input3: "ls *.c"
+            - checking redirection, bare name exapansion
+            - Expected Output:
+                Job: 
+                    Exec: /bin/ls
+                    Args: |ls||sumFunction.c||builtins.c||mysh.c||arraylist.c||squareFunction.c||testJobMaking.c||job.c||(null)|
+                    InRe: 
+                    OuRe: 
+        - Input4: "ls *.java >txt.txt"
+            - checking redirection, bare name exapansion
+            - Expected Output:
+                 Job: 
+                    Exec: /bin/ls
+                    Args: |ls||*.java||(null)|
+                    InRe: 
+                    OuRe: txt.txt
+        - Input5: "ls testFolder2/*.txt >txt.txt"
+            - checking redirection, bare name exapansion
+            - Expected Output:
+                Job: 
+                    Exec: /bin/ls
+                    Args: |ls||testFolder2/test1.txt||testFolder2/test2.txt||testFolder2/input.txt||(null)|
+                    InRe: 
+                    OuRe: txt.txt
+        - Input6: "pwd"
+            - checking redirection, bare name exapansion
+            - Expected Output:
+                Job: 
+                    Exec: pwd
+                    Args: |pwd||(null)|
+                    InRe: 
+                    OuRe: 
 
-- bare names
-    - 
+- Test Batch Mode: 
+    WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND to build and run the test1.sh
+        this is bc the test1.sh also depends on our .c files that need to be compilied.
+
+    The following outlines the details in the "test1.sh" file.
+    - wildcards
+        - using wildcards with built-ins
+            - ex: ls *.c
+            - ls testFolder2/te*.txt
+        - using wildcards with other commands
+            - ex: cat *.txt
+        - no matching files found
+            - return default output that normal shell would return
+    - redirection
+        - input redirection
+            - ex: sumFunction < sumTest.txt
+                - the sumFunction is a simple program written that adds up all the numbers in a file. We are passing in a file sumTest as input redirection
+        - output redirection
+            - using redirection with built-ins
+                - ex: pwd > output.txt
+        - using multiple redirections together
+                - ex: ./sumFunction < sumTest.txt > sumOutput.txt
+        
+    - pipe
+        - using pipes with the other functions and built-ins
+        - using pipes with redirection
+            - ex: ./sumFunction < sumTest.txt | ./squareFunction
+    - builtins
+        - cd
+            - cd with no args
+                - print out error
+            - cd with 1 arg
+            - cd with 2+ args
+                - print out error
+        - pwd
+            - pwd with no args
+            - pwd with 1+ args
+                - print out error
+        - which
+            - called with no args
+                - print out error (or print out nothing)
+            - called with 1 arg 
+            - called with 2+ args
+    - conditinals
+        - then
+            - calling then/else after "which ls" (true)
+                - testResults1.txt should display "test1 passed"
+        - else
+            - calling then/else after "pwd a" (false)
+                - testResults2.txt should display "test2 failed"
+
+    - bare names
+        - bare names are properly expanded to meet the specific file path.
+        - this is test by all the cmds above

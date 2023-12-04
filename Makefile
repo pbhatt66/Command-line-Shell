@@ -5,7 +5,8 @@ mysh: mysh.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
 testJobMaking: testJobMaking.o job.o arraylist.o builtins.o
 	$(CC) $(CFLAGS) -o $@ $^
-
+testTest1: mysh sumFunction squareFunction
+	./mysh test1.sh
 sumFunction: sumFunction.o
 	$(CC) $(CFLAGS) -o $@ $^
 
@@ -21,4 +22,4 @@ squareFunction.o: squareFunction.c
 *.o: *.h 
 
 clean:
-	rm -f -r *.o *.dSYM mysh
+	rm -f -r *.o *.dSYM mysh testJobMaking sumFunction squareFunction 

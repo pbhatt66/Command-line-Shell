@@ -13,7 +13,6 @@
 #include "job.h"
 #include "mysh_lib.h"
 
-#define BUFSIZE 256
 #define SLEEPLEN 5
 
 int mysh_errno = MYSH_EXIT_SUCCESS;
@@ -291,8 +290,8 @@ void accept_line(char* line){
  */
 int main(int argc, char **argv) {
     printf("Welcome to my shell!\n");
-
-    char buf[BUFSIZE];
+    int bufSize;
+    //char buf[BUFSIZE];
     int pos, bytes, line_length = 0, fd, start;
     char *line = NULL;
     int SHOWPROMPTS = 0;
@@ -303,13 +302,21 @@ int main(int argc, char **argv) {
             perror(argv[1]);
             exit(EXIT_FAILURE);
         }
+        struct stat stats;
+        fstat(fd, &stats);
+        bufSize = stats.st_size;
     } else {
         fd = STDIN_FILENO;
         SHOWPROMPTS = 1;
+        bufSize = 256;
     }
+
+    char* buf = malloc(sizeof(char) * (bufSize + 1));
+    if (DEBUG) printf("Buff Size: %d\n", bufSize);
+
     if (SHOWPROMPTS) promptNextCMD();
-    while ((bytes = read(fd, buf, BUFSIZE)) > 0) {
-        if (DEBUG) printf("Read %d bytes\n", bytes);
+    while ((bytes = read(fd, buf, bufSize)) > 0) {
+        if (DEBUG) printf("MYREAD %d bytes\n", bytes);
         // search input for a newline character
         start = 0;
         for (pos = 0; pos < bytes; pos++) {
@@ -342,7 +349,7 @@ int main(int argc, char **argv) {
         if (SHOWPROMPTS) promptNextCMD();
 
     }
-
+    free(buf);
     printf("mysh: exiting\n");
     close(fd);
     return EXIT_SUCCESS;

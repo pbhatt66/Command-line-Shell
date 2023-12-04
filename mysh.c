@@ -25,10 +25,19 @@ int mysh_errno = MYSH_EXIT_SUCCESS;
  * @return int 1 if fully white space, 0 if not
  */
 int strisempty(char *s) {
-  while (*s != '\0') {
-    if (!isspace((unsigned char)*s))
-      return 0;
-    s++;
+    // if (s == NULL) return 0;
+    // printf("%s\n", s);
+    // int size  = strlen(s);
+    // for (int i = 0; i < size; i++) {
+    //     if (!isspace(s[i])) {
+    //         return 0;
+    //     }
+    // }
+    // return 1;
+    while (*s != '\0') {
+        if (!isspace((unsigned char)*s))
+        return 0;
+        s++;
   }
   return 1;
 }
@@ -259,6 +268,7 @@ void accept_line(char* line){
     if(strncmp(line, "then", COND_END_INDEX) == 0){
         // printf("Checking then\n");
         if(mysh_errno == MYSH_EXIT_SUCCESS || mysh_errno == MYSH_EXIT_UNDEF){
+            printf("This is line: [%s]\n", line);
             mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
         }
         else {

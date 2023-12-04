@@ -267,7 +267,7 @@ void accept_line(char* line){
     if(strncmp(line, "then", COND_END_INDEX) == 0){
         // printf("Checking then\n");
         if(mysh_errno == MYSH_EXIT_SUCCESS || mysh_errno == MYSH_EXIT_UNDEF){
-            printf("This is line: [%s]\n", line);
+            //printf("This is line: [%s]\n", line);
             mysh_errno = accept_cmd_line(line+COND_END_INDEX+1);
         }
         else {

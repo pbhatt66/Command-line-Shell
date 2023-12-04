@@ -10,6 +10,9 @@ MakeFile:
 - make testJobMaking:
     run this cmd to test that we are making a job properly.
     to run the file, use "./testJobMaking"
+- make testTest1:
+    run this cmd to test the test.sh file in batch mode
+    to run the file, use "./testTest1"
 - B flag: include -B in any of the cmds above to force rebuild the excutable file
 - DEBUG:
     edit the Makefile and change line 2 to "DEBUG = -D DEBUG=1"
@@ -138,6 +141,7 @@ Implemntation
     - used arraylist.c from class 
 
 Tests:
+WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND, AND THEN RUN "testTest1"
 - wildcards
     - using wildcards with built-ins
         - ex: ls *.c

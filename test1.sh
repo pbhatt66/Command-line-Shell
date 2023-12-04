@@ -5,6 +5,7 @@ cat *.txt
 echo
 ls *.java
 ls in*.txt
+ls testFolder2/te*.txt
 
 ./sumFunction < sumTest.txt
 pwd > directory.txt
@@ -19,9 +20,9 @@ pwd
 pwd testFolder
 
 which ls
-then echo "test1.sh passed" > testResults.txt
-else echo "test1.sh failed" > testResults.txt
+then echo "test1 passed" > testResults.txt
+else echo "test1 failed" > testResults.txt
 
 pwd a
-then echo "test2.sh passed" > testResults2.txt
-else echo "test2.sh failed" > testResults2.txt
+then echo "test2 passed" > testResults2.txt
+else echo "test2 failed" > testResults2.txt

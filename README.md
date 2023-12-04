@@ -13,6 +13,9 @@ MakeFile:
 - make testTest1:
     run this cmd to test the test.sh file in batch mode
     to run the file, use "./testTest1"
+- make removeTXTFiles"
+    run this cmd to remove the .txt files that were created when running the test.sh file in batch mode
+    to run the file, use " make removeTXTFiles"
 - B flag: include -B in any of the cmds above to force rebuild the excutable file
 - DEBUG:
     edit the Makefile and change line 2 to "DEBUG = -D DEBUG=1"
@@ -145,6 +148,7 @@ WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND, AND THEN RUN "testTest1"
 - wildcards
     - using wildcards with built-ins
         - ex: ls *.c
+        - ls testFolder2/te*.txt
     - using wildcards with other commands
         - ex: cat *.txt
     - no matching files found
@@ -183,8 +187,10 @@ WHEN RUNNING BATCH MODE, USE THE MAKE COMMAND, AND THEN RUN "testTest1"
 - conditinals
     - then
         - calling then/else after "which ls" (true)
+            - testResults1.txt should display "test1 passed"
     - else
         - calling then/else after "pwd a" (false)
+            - testResults2.txt should display "test2 failed"
 
 - bare names
     - 

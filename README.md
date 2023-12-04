@@ -154,12 +154,13 @@ Tests:
         - using redirection with built-ins
             - ex: pwd > output.txt
     - using multiple redirections together
-            - ex: 
+            - ex: ./sumFunction < sumTest.txt > sumOutput.txt
     
 - pipe
     - using pipes with the other functions and built-ins
+        - 
     - using pipes with redirection
-        - ex: 
+        - ex: ./sumFunction < sumTest.txt | ./squareFunction
 - builtins
     - cd
         - cd with no args
@@ -178,7 +179,9 @@ Tests:
         - called with 2+ args
 - conditinals
     - then
+        - calling then/else after "which ls" (true)
     - else
+        - calling then/else after "pwd a" (false)
 
 - bare names
-
+    - 

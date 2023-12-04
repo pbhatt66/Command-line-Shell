@@ -9,7 +9,13 @@ testJobMaking: testJobMaking.o job.o
 sumFunction: sumFunction.o
 	$(CC) $(CFLAGS) -o $@ $^
 
+squareFunction: squareFunction.o
+	$(CC) $(CFLAGS) -o $@ $^
+
 sumFunction.o: sumFunction.c
+	$(CC) $(CFLAGS) -c $^
+
+squareFunction.o: squareFunction.c
 	$(CC) $(CFLAGS) -c $^
 
 *.o: *.h 

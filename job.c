@@ -105,6 +105,7 @@ int  handleWildcards(char* arg, arraylist_t* argList) {
         if(stat(temp, &stats) == 0){
             if (malloced) free(temp);
             if (!S_ISREG(stats.st_mode)) {
+                free(pathCopy);
                 continue;
             }
         } else {
@@ -308,10 +309,12 @@ Job *makeJob(char* jobCmd){
  */
 void freeJob(Job* job){
     free(job->execPath);
-    for(int i = 0; i < job->numOfArgs; i++){
+
+    for(int i = 0; i < job->numOfArgs+1; i++){
         free(job->args[i]);
     }
     free(job->args);
+
     free(job->inputReDirectPath);
     free(job->outputReDirectPath);
     free(job);

@@ -38,8 +38,9 @@ arraylist_t *al_create(unsigned capacity)
 
 void al_destroy(arraylist_t *L)
 {
+    //printf("DATA ISNDIE |%s|\n", *(L->data));
     free(L->data);
-    
+    free(L);
 
 }
 
@@ -78,11 +79,14 @@ int al_push(arraylist_t *L, elem_t elem)
 
 int al_pop(arraylist_t *L, elem_t *dest)
 {
-    if (L->length == 0) return 0;
-
-    L->length--;
-    if (dest) *dest = L->data[L->startingPoint];
-    if (DEBUG) printf("Removed %s; new length %d\n", L->data[L->startingPoint], L->length);
-    L->startingPoint++;
-    return 1;
+    if (L->length == 0) 
+        return 0;
+    if (dest) {
+        L->length--;
+        *dest = L->data[L->startingPoint];
+        if (DEBUG) printf("Removed %s; new length %d\n", L->data[L->startingPoint], L->length);
+        L->startingPoint++;
+        return 1;  
+    }
+    return 0;
 }

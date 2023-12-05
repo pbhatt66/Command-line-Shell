@@ -33,6 +33,14 @@ Overview:
     - or will stop at EOF.
 
 Important Notes:
+- using buffered cmds like "less"
+    on ilab, when you reach the end of file, and still countine to try to scroll, in the background
+    random characters might be printed to mysh. 
+    mysh will throw a error after quiting the less cmd. 
+    there is nothing we can do, because the random characters print before we quit less. so we are still
+    in the exec().
+    We thought the stdout of the less cmd was wrong, but we compared it the actual less running on a
+    normal terminal, and stdout was still set to the tty#.
 - testing batchmode with our .sh file:
     use the cmd in the Makefile. "make batchmodetest"
 - quotes:

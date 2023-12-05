@@ -90,6 +90,10 @@ int runJob(Job* job){
             return MYSH_EXIT_FAILURE;
         }
     }
+    if(job->execPath == NULL){
+        fprintf(stderr, "mysh: command not found: %s\n", job->args[0]);
+        exit(EXIT_FAILURE);
+    }
     execv(job->execPath, job->args);
     fprintf(stderr, "mysh: command not found: %s\n", job->args[0]);
     exit(EXIT_FAILURE);

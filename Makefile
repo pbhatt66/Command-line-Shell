@@ -24,7 +24,7 @@ squareFunction.o: squareFunction.c
 *.o: *.h 
 
 removeTXTFiles:
-	rm -f -r directory.txt sumOutput.txt testResults.txt testResults2.txt 
+	rm -f -r directory.txt sumOutput.txt testFolder/testResults.txt testFolder/testResults2.txt 
 
 clean: removeTXTFiles
 	rm -f -r *.gch *.o *.dSYM mysh testJobMaking sumFunction squareFunction

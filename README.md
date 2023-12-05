@@ -12,7 +12,7 @@ MakeFile:
     look at Test->Test Interactive Mode section
 - make batchmodetest:
     run this cmd to test the test.sh file in batch mode
-    to run the file, use "./testTest1"
+    this will make the sumFunction and squareFunction excutable files that are used in our test case, then it will run the test.sh file
 - make removeTXTFiles:
     run this cmd to remove the .txt files that were created when running the test.sh file in batch mode
     to use: "make removeTXTFiles"

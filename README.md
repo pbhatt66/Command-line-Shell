@@ -1,5 +1,4 @@
-Pranay Bhatt: pdb91
-Dharmik Patel: dsp187
+This is our implementation of the Linux Command Line called "mysh"
 
 MakeFile:
 - Sometimes if the "make" command does not work, or throws errors, then:
